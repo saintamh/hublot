@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 # standards
+from contextlib import contextmanager
 from hashlib import md5
 import logging
 from pathlib import Path
 import pickle
-from time import sleep
+from time import sleep, time
 from typing import Any, Callable, Optional, Union
+from urllib.parse import urlparse
 
 # 3rd parties
 from requests import PreparedRequest, Request, RequestException, Response, Session
@@ -70,12 +72,33 @@ class Cache:
         return md5(repr(key).encode('UTF-8')).hexdigest()
 
 
+class CourtesySleep:
+
+    def __init__(self, courtesy_seconds=5):
+        self.courtesy_seconds = courtesy_seconds
+        self.last_request_per_host = {}
+
+    @contextmanager
+    def sleep(self, req: Request):
+        host = urlparse(req.url).hostname
+        last_request = self.last_request_per_host.get(host, 0)
+        delay = (last_request + self.courtesy_seconds) - time()
+        if delay > 0:
+            sleep(delay)
+        try:
+            yield
+        finally:
+            # NB we store the time after the request is complete
+            self.last_request_per_host[host] = time()
+
+
 class Melba:
 
     def __init__(self, cache_root_path):
         self.logger = logging.getLogger('melba')
         self.session = Session()
         self.cache = Cache(self.logger, cache_root_path)
+        self.courtesy = CourtesySleep()
 
     def fetch_and_parse(
         self,
@@ -115,7 +138,8 @@ class Melba:
             from_cache = self.cache.get(prepared_req)
             if from_cache is not None:
                 return from_cache
-        res = self.session.request(method, url, **kwargs)
+        with self.courtesy.sleep(req):
+            res = self.session.request(method, url, **kwargs)
         self.cache.put(prepared_req, res)
         return res
 
