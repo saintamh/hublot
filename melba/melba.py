@@ -2,6 +2,7 @@
 
 # standards
 from contextlib import contextmanager
+from dataclasses import dataclass
 from hashlib import md5
 import logging
 from pathlib import Path
@@ -12,6 +13,39 @@ from urllib.parse import urlparse
 
 # 3rd parties
 from requests import PreparedRequest, Request, RequestException, Response, Session
+
+
+@dataclass(frozen=False)
+class LogEntry:
+    prepared_req: PreparedRequest
+    cache_key: str = None
+    cached: bool = None
+    courtesy_seconds: int = None
+
+    def _compose_line(self):
+        if self.cache_key:
+            yield f'[{self.cache_key}] '
+        if self.cached:
+            yield '[cached] '
+        elif (self.courtesy_seconds or 0) > 0.5:
+            seconds = f'{round(self.courtesy_seconds)}s'
+            yield f'[{seconds:^6s}] '
+        else:
+            yield '         '
+        pr = self.prepared_req
+        yield pr.url
+        if pr.method != 'GET':
+            yield f'[{pr.method}'
+            try:
+                length = int(pr.headers.get('Content-Length', 0))
+            except ValueError:
+                length = 0
+            if length > 0:
+                yield f' {length} bytes'
+            yield ']'
+
+    def __str__(self):
+        return ''.join(self._compose_line())
 
 
 class Storage:
@@ -41,20 +75,16 @@ class Storage:
 
 class Cache:
 
-    def __init__(self, logger, root_path):
-        self.logger = logger
+    def __init__(self, root_path):
         self.storage = Storage(root_path)
 
-    def get(self, prepared_req: PreparedRequest) -> Optional[Response]:
+    def get(self, prepared_req: PreparedRequest, log: LogEntry) -> Optional[Response]:
         key = self.compute_key(prepared_req)
-        res = self.storage.retrieve(key)
-        if res is not None:
-            self.logger.info('[%s] [cached] %s', key, prepared_req.url)
-        return res
+        log.cache_key = key
+        return self.storage.retrieve(key)
 
     def put(self, prepared_req: PreparedRequest, res: Response) -> None:
         key = self.compute_key(prepared_req)
-        self.logger.info('[%s]          %s', key, prepared_req.url)
         return self.storage.store(key, res)
 
     @staticmethod
@@ -79,11 +109,12 @@ class CourtesySleep:
         self.last_request_per_host = {}
 
     @contextmanager
-    def sleep(self, req: Request):
+    def sleep(self, req: Request, log: LogEntry):
         host = urlparse(req.url).hostname
         last_request = self.last_request_per_host.get(host, 0)
         delay = (last_request + self.courtesy_seconds) - time()
         if delay > 0:
+            log.courtesy_seconds = delay
             sleep(delay)
         try:
             yield
@@ -94,10 +125,10 @@ class CourtesySleep:
 
 class Melba:
 
-    def __init__(self, cache_root_path):
-        self.logger = logging.getLogger('melba')
+    def __init__(self, cache_root_path, propagate_logs: bool = False):
+        self.logger = self._init_logger(propagate_logs)
         self.session = Session()
-        self.cache = Cache(self.logger, cache_root_path)
+        self.cache = Cache(cache_root_path)
         self.courtesy = CourtesySleep()
 
     def fetch_and_parse(
@@ -134,13 +165,17 @@ class Melba:
             cookies=kwargs.get('cookies'),
         )
         prepared_req = self.session.prepare_request(req)
+        log = LogEntry(req)
+        res = None
         if not force_cache_stale:
-            from_cache = self.cache.get(prepared_req)
-            if from_cache is not None:
-                return from_cache
-        with self.courtesy.sleep(req):
-            res = self.session.request(method, url, **kwargs)
-        self.cache.put(prepared_req, res)
+            res = self.cache.get(prepared_req, log)
+        if res is not None:
+            log.cached = True
+        else:
+            with self.courtesy.sleep(req, log):
+                res = self.session.request(method, url, **kwargs)
+            self.cache.put(prepared_req, res)
+        self.logger.info('%s', log)
         return res
 
     def get(self, url: str, **kwargs) -> Response:
@@ -164,3 +199,14 @@ class Melba:
 
     def delete(self, url: str, **kwargs) -> Response:
         return self.fetch(url, method='DELETE', **kwargs)
+
+    @staticmethod
+    def _init_logger(propagate: bool):
+        logger = logging.getLogger('melba')
+        if not propagate:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(message)s', None, '%')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.propagate = False
+        return logger
