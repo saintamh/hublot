@@ -80,8 +80,10 @@ class Cache:
 
     def get(self, prepared_req: PreparedRequest, log: LogEntry) -> Optional[Response]:
         key = self.compute_key(prepared_req)
+        res = self.storage.retrieve(key)
         log.cache_key = key
-        return self.storage.retrieve(key)
+        log.cached = (res is not None)
+        return res
 
     def put(self, prepared_req: PreparedRequest, res: Response) -> None:
         key = self.compute_key(prepared_req)
@@ -187,9 +189,7 @@ class Melba:
         res = None
         if self.cache and not force_cache_stale:
             res = self.cache.get(prepared_req, log)
-        if res is not None:
-            log.cached = True
-        else:
+        if res is None:
             with self.courtesy_sleep(req, log, courtesy_seconds):
                 res = self.session.request(method, url, **kwargs)
             if self.cache:

@@ -152,3 +152,16 @@ def test_equivalent_requests(cache, config_1, config_2):
     assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None  # else test is invalid
     cache.put(prepared_req_1, response)
     assert cache.get(prepared_req_2, LogEntry(prepared_req_2)).__getstate__() == response.__getstate__()
+
+
+def test_cache_updates_log_entry_attributes(cache):
+    prepared_req = dummy_prepared_request()
+    log = LogEntry(prepared_req)
+    assert log.cache_key is None
+    assert log.cached is None
+    cache.get(prepared_req, log)
+    assert log.cache_key is not None
+    assert log.cached is False
+    cache.put(prepared_req, dummy_response())
+    cache.get(prepared_req, log)
+    assert log.cached is True
