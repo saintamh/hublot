@@ -55,19 +55,19 @@ class Storage:
             root_path = Path(root_path)
         self.root_path = root_path
 
-    def retrieve(self, cache_key: str) -> Optional[Response]:
-        file_path = self.file_path(cache_key)
-        if file_path.exists():
-            with file_path.open('rb') as file_in:
-                return pickle.load(file_in)
-        return None
-
     def store(self, cache_key: str, res: Response) -> None:
         file_path = self.file_path(cache_key)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         res.content  # it's to read contents to memory before pickling, pylint: disable=pointless-statement
         with file_path.open('wb') as file_out:
             return pickle.dump(res, file_out)
+
+    def retrieve(self, cache_key: str) -> Optional[Response]:
+        file_path = self.file_path(cache_key)
+        if file_path.exists():
+            with file_path.open('rb') as file_in:
+                return pickle.load(file_in)
+        return None
 
     def file_path(self, cache_key: str) -> Path:
         return self.root_path / cache_key[:3] / cache_key[3:]
