@@ -2,7 +2,7 @@
 
 # standards
 from io import BytesIO
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 # 3rd parties
 from requests import PreparedRequest, Response
@@ -14,14 +14,18 @@ def dummy_prepared_request(
     params: Optional[Dict[str, str]] = None,
     data: bytes = b'This is my request data',
     headers: Optional[Dict[str, str]] = None,
+    cookies: Optional[Dict[str, str]] = None,
+    json: Any = None,
 ):
     prepared_req = PreparedRequest()
     prepared_req.prepare(
         method,
         url,
-        headers=headers or {},
+        headers=headers,
         data=data,
-        params=params or {},
+        params=params,
+        cookies=cookies,
+        json=json,
     )
     return prepared_req
 
