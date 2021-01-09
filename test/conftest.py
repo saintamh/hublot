@@ -7,10 +7,16 @@ from tempfile import TemporaryDirectory
 import pytest
 
 # melba
-from melba import Storage
+from melba import Cache, Storage
 
 
 @pytest.fixture
 def storage():
     with TemporaryDirectory() as temp_root:
         yield Storage(temp_root)
+
+
+@pytest.fixture
+def cache():
+    with TemporaryDirectory() as temp_root:
+        yield Cache(temp_root)
