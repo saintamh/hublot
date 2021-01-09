@@ -137,12 +137,14 @@ class Melba:
         self,
         cache: Cache = None,
         session: Session = None,
-        courtesy_sleep: CourtesySleep = CourtesySleep(5),
+        courtesy_sleep: Union[CourtesySleep, int] = 5,
         propagate_logs: bool = False,
     ):
         self.logger = self._init_logger(propagate_logs)
         self.cache = cache
         self.session = session or Session()
+        if not isinstance(courtesy_sleep, CourtesySleep):
+            courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
 
     def fetch_and_parse(
