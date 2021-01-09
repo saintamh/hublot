@@ -109,10 +109,12 @@ class CourtesySleep:
         self.last_request_per_host = {}
 
     @contextmanager
-    def __call__(self, req: Request, log: LogEntry):
+    def __call__(self, req: Request, log: LogEntry, courtesy_seconds: Optional[int] = None):
+        if courtesy_seconds is None:
+            courtesy_seconds = self.courtesy_seconds
         host = urlparse(req.url).hostname
         last_request = self.last_request_per_host.get(host, 0)
-        delay = (last_request + self.courtesy_seconds) - time()
+        delay = (last_request + courtesy_seconds) - time()
         if delay > 0:
             log.courtesy_seconds = delay
             sleep(delay)
@@ -157,7 +159,13 @@ class Melba:
                 else:
                     raise
 
-    def fetch(self, url: str, force_cache_stale=False, **kwargs) -> Response:
+    def fetch(
+        self,
+        url: str,
+        force_cache_stale: bool = False,
+        courtesy_seconds: Optional[int] = None,
+        **kwargs,
+    ) -> Response:
         method = kwargs.pop('method', 'GET').upper()
         req = Request(
             url=url,
@@ -178,7 +186,7 @@ class Melba:
         if res is not None:
             log.cached = True
         else:
-            with self.courtesy_sleep(req, log):
+            with self.courtesy_sleep(req, log, courtesy_seconds):
                 res = self.session.request(method, url, **kwargs)
             if self.cache:
                 self.cache.put(prepared_req, res)
