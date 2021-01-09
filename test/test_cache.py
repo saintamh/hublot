@@ -2,8 +2,7 @@
 
 # standards
 from collections import OrderedDict
-from copy import deepcopy
-from itertools import combinations
+from itertools import combinations, product
 
 # 3rd parties
 import pytest
@@ -94,21 +93,35 @@ EQUIVALENCIES = [
 
 
 def iter_unique_tests():
-    seen = {}
-    for group in EQUIVALENCIES:
-        key = None
-        for config in group:
-            key = Cache.compute_key(dummy_prepared_request(**config))
-            yield config, key, deepcopy(seen)
-        seen[key] = config
+    for index, group in enumerate(EQUIVALENCIES):
+        all_other_configs = [
+            other_group[0]
+            for other_index, other_group in enumerate(EQUIVALENCIES)
+            if other_index > index  # Using > to avoid wastefully comparing A to B and B to A
+        ]
+        for config, other_config in product(group, all_other_configs):
+            yield config, other_config
 
 
 @pytest.mark.parametrize(
-    'config, key, seen',
+    'config_1, config_2',
     iter_unique_tests(),
 )
-def test_unique(config, key, seen):
-    assert key not in seen, (config, seen[key])
+def test_unique_keys(config_1, config_2):
+    key = Cache.compute_key(dummy_prepared_request(**config_1))
+    other_key = Cache.compute_key(dummy_prepared_request(**config_2))
+    assert key != other_key
+
+
+@pytest.mark.parametrize(
+    'config_1, config_2',
+    iter_unique_tests(),
+)
+def test_unique_requests(cache, config_1, config_2):
+    prepared_req_1 = dummy_prepared_request(**config_1)
+    prepared_req_2 = dummy_prepared_request(**config_2)
+    cache.put(prepared_req_1, dummy_response())
+    assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None
 
 
 def iter_equivalency_tests():
@@ -122,7 +135,20 @@ def iter_equivalency_tests():
     'config_1, config_2',
     iter_equivalency_tests(),
 )
-def test_equivalency(config_1, config_2):
+def test_equivalent_keys(config_1, config_2):
     key_1 = Cache.compute_key(dummy_prepared_request(**config_1))
     key_2 = Cache.compute_key(dummy_prepared_request(**config_2))
     assert key_1 == key_2, (config_1, config_2)
+
+
+@pytest.mark.parametrize(
+    'config_1, config_2',
+    iter_equivalency_tests(),
+)
+def test_equivalent_requests(cache, config_1, config_2):
+    prepared_req_1 = dummy_prepared_request(**config_1)
+    prepared_req_2 = dummy_prepared_request(**config_2)
+    response = dummy_response()
+    assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None  # else test is invalid
+    cache.put(prepared_req_1, response)
+    assert cache.get(prepared_req_2, LogEntry(prepared_req_2)).__getstate__() == response.__getstate__()
