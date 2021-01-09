@@ -2,6 +2,7 @@
 
 # standards
 from io import BytesIO
+from itertools import combinations, product
 from typing import Any, Dict, Optional
 
 # 3rd parties
@@ -44,3 +45,21 @@ def dummy_response(
     res.url = url
     res.raw = BytesIO(data)
     return res
+
+
+def iter_nonequal_pairs(equivalencies):
+    for index, group in enumerate(equivalencies):
+        all_other_elems = [
+            other_group[0]
+            for other_index, other_group in enumerate(equivalencies)
+            if other_index > index  # Using > to avoid wastefully comparing A to B and B to A
+        ]
+        for elem, other_elem in product(group, all_other_elems):
+            yield elem, other_elem
+
+
+def iter_equal_pairs(equivalencies):
+    for group in equivalencies:
+        if len(group) > 2:
+            for elem_1, elem_2 in combinations(group, 2):
+                yield elem_1, elem_2

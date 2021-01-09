@@ -2,14 +2,13 @@
 
 # standards
 from collections import OrderedDict
-from itertools import combinations, product
 
 # 3rd parties
 import pytest
 
 # melba
 from melba.melba import Cache, LogEntry
-from .utils import dummy_prepared_request, dummy_response
+from .utils import dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 
 def test_simple_cache_use(cache):
@@ -92,20 +91,9 @@ EQUIVALENCIES = [
 ]
 
 
-def iter_unique_tests():
-    for index, group in enumerate(EQUIVALENCIES):
-        all_other_configs = [
-            other_group[0]
-            for other_index, other_group in enumerate(EQUIVALENCIES)
-            if other_index > index  # Using > to avoid wastefully comparing A to B and B to A
-        ]
-        for config, other_config in product(group, all_other_configs):
-            yield config, other_config
-
-
 @pytest.mark.parametrize(
     'config_1, config_2',
-    iter_unique_tests(),
+    iter_nonequal_pairs(EQUIVALENCIES),
 )
 def test_unique_keys(config_1, config_2):
     key = Cache.compute_key(dummy_prepared_request(**config_1))
@@ -115,7 +103,7 @@ def test_unique_keys(config_1, config_2):
 
 @pytest.mark.parametrize(
     'config_1, config_2',
-    iter_unique_tests(),
+    iter_nonequal_pairs(EQUIVALENCIES),
 )
 def test_unique_requests(cache, config_1, config_2):
     prepared_req_1 = dummy_prepared_request(**config_1)
@@ -124,16 +112,9 @@ def test_unique_requests(cache, config_1, config_2):
     assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None
 
 
-def iter_equivalency_tests():
-    for group in EQUIVALENCIES:
-        if len(group) > 2:
-            for config_1, config_2 in combinations(group, 2):
-                yield config_1, config_2
-
-
 @pytest.mark.parametrize(
     'config_1, config_2',
-    iter_equivalency_tests(),
+    iter_equal_pairs(EQUIVALENCIES),
 )
 def test_equivalent_keys(config_1, config_2):
     key_1 = Cache.compute_key(dummy_prepared_request(**config_1))
@@ -143,7 +124,7 @@ def test_equivalent_keys(config_1, config_2):
 
 @pytest.mark.parametrize(
     'config_1, config_2',
-    iter_equivalency_tests(),
+    iter_equal_pairs(EQUIVALENCIES),
 )
 def test_equivalent_requests(cache, config_1, config_2):
     prepared_req_1 = dummy_prepared_request(**config_1)
