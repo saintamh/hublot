@@ -19,11 +19,11 @@ from .utils import dummy_response
 )
 def test_courtesy_sleep(mocker, server, courtesy_seconds):
     kwargs = {} if courtesy_seconds is None else {'courtesy_sleep': courtesy_seconds}
-    fetch = melba.Melba(**kwargs).fetch
+    client = melba.Client(**kwargs)
     mocker.patch('melba.melba.sleep')
-    fetch(f'{server}/hello')
+    client.fetch(f'{server}/hello')
     melba.melba.sleep.assert_not_called()  # 1st request, no sleep
-    fetch(f'{server}/hello')
+    client.fetch(f'{server}/hello')
     if courtesy_seconds == 0:
         melba.melba.sleep.assert_not_called()
     else:
@@ -33,7 +33,7 @@ def test_courtesy_sleep(mocker, server, courtesy_seconds):
 
 
 def test_nonequal_hostnames(mocker):
-    client = melba.Melba()
+    client = melba.Client()
     mocker.patch('melba.melba.sleep')
     mocker.patch.object(client.session, 'request', return_value=dummy_response())
     client.fetch('http://one/')
@@ -57,7 +57,7 @@ def test_nonequal_hostnames(mocker):
     )
 )
 def test_equal_hostnames(mocker, url_1, url_2):
-    client = melba.Melba()
+    client = melba.Client()
     mocker.patch('melba.melba.sleep')
     mocker.patch.object(client.session, 'request', return_value=dummy_response())
     client.fetch(url_1)

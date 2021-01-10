@@ -131,7 +131,7 @@ class CourtesySleep:
             self.last_request_per_host[host] = time()
 
 
-class Melba:
+class Client:
 
     def __init__(
         self,
