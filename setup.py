@@ -11,7 +11,7 @@ if sys.version_info < (3, 7):
 
 
 setuptools.setup(
-    name='melba',
+    name='forban',
     version='1.0',
     author='Hervé Saint-Amand',
     packages=setuptools.find_packages(),

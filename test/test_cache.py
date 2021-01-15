@@ -6,8 +6,8 @@ from collections import OrderedDict
 # 3rd parties
 import pytest
 
-# melba
-from melba.melba import Cache, LogEntry
+# forban
+from forban.forban import Cache, LogEntry
 from .utils import dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 

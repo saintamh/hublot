@@ -10,8 +10,8 @@ from flask import Flask
 import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
-# melba
-from melba import Cache, Storage
+# forban
+from forban import Cache, Storage
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def cache():
 
 
 def flask_app():
-    app = Flask('melba-tests')
+    app = Flask('forban-tests')
 
     @app.route('/hello')
     def _():

@@ -8,8 +8,8 @@ from itertools import combinations
 # 3rd parties
 import pytest
 
-# melba
-import melba
+# forban
+import forban
 from .utils import dummy_response
 
 
@@ -19,27 +19,27 @@ from .utils import dummy_response
 )
 def test_courtesy_sleep(mocker, server, courtesy_seconds):
     kwargs = {} if courtesy_seconds is None else {'courtesy_sleep': courtesy_seconds}
-    client = melba.Client(**kwargs)
-    mocker.patch('melba.melba.sleep')
+    client = forban.Client(**kwargs)
+    mocker.patch('forban.forban.sleep')
     client.fetch(f'{server}/hello')
-    melba.melba.sleep.assert_not_called()  # 1st request, no sleep
+    forban.forban.sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello')
     if courtesy_seconds == 0:
-        melba.melba.sleep.assert_not_called()
+        forban.forban.sleep.assert_not_called()
     else:
-        melba.melba.sleep.assert_called_once()
-        delay, = melba.melba.sleep.call_args[0]
+        forban.forban.sleep.assert_called_once()
+        delay, = forban.forban.sleep.call_args[0]
         assert delay == pytest.approx(courtesy_seconds or 5, 0.1)
 
 
 def test_nonequal_hostnames(mocker):
-    client = melba.Client()
-    mocker.patch('melba.melba.sleep')
+    client = forban.Client()
+    mocker.patch('forban.forban.sleep')
     mocker.patch.object(client.session, 'request', return_value=dummy_response())
     client.fetch('http://one/')
-    melba.melba.sleep.assert_not_called()
+    forban.forban.sleep.assert_not_called()
     client.fetch('http://two/')
-    melba.melba.sleep.assert_not_called()
+    forban.forban.sleep.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -57,10 +57,10 @@ def test_nonequal_hostnames(mocker):
     )
 )
 def test_equal_hostnames(mocker, url_1, url_2):
-    client = melba.Client()
-    mocker.patch('melba.melba.sleep')
+    client = forban.Client()
+    mocker.patch('forban.forban.sleep')
     mocker.patch.object(client.session, 'request', return_value=dummy_response())
     client.fetch(url_1)
-    melba.melba.sleep.assert_not_called()  # 1st request, no sleep
+    forban.forban.sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(url_2)
-    melba.melba.sleep.assert_called_once()
+    forban.forban.sleep.assert_called_once()
