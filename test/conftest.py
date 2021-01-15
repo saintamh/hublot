@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # standards
+from pathlib import Path
 from random import randrange
 from tempfile import TemporaryDirectory
 from threading import Thread
@@ -11,13 +12,14 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
-from forban import Cache, Storage
+from forban import Cache
+from forban.cache import HeaderStorage
 
 
 @pytest.fixture
-def storage():
+def header_storage():
     with TemporaryDirectory() as temp_root:
-        yield Storage(temp_root)
+        yield HeaderStorage(Path(temp_root))
 
 
 @pytest.fixture

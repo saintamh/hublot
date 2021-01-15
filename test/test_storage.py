@@ -4,10 +4,11 @@
 from .utils import dummy_response
 
 
-def test_simple_store_and_retrieve(storage):
+def test_header_storage(header_storage):
     key = 'somestring'
-    assert storage.retrieve(key) is None
-    storage.store(key, dummy_response())
-    assert storage.retrieve(key).__getstate__() == dummy_response().__getstate__()
-    assert storage.retrieve(key).content == dummy_response().content
-    assert storage.retrieve(key).__getstate__() != dummy_response(status_code=401).__getstate__()
+    assert header_storage.select(key) is None
+    res = dummy_response()
+    res._content = None  # pylint: disable=protected-access
+    header_storage.insert(key, res)
+    retrieved = header_storage.select(key)
+    assert retrieved.__getstate__() == res.__getstate__()

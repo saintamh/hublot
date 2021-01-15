@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 # standards
+from contextlib import closing
 import gzip
 from hashlib import md5
 from pathlib import Path
 import pickle
 import sqlite3
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 # 3rd parties
 from requests import PreparedRequest, Response
@@ -27,25 +28,25 @@ class HeaderStorage:
         self._init_db()
 
     def _init_db(self):
-        with self.db.cursor() as cursor:
+        with closing(self.db.cursor()) as cursor:
             cursor.execute(
                 '''
                     CREATE TABLE IF NOT EXISTS "forban_headers" (
                        "key" TEXT NOT NULL PRIMARY KEY,
-                       "pickled_response" BLOB NOT NULL,
+                       "pickled_response" BLOB NOT NULL
                     );
                 '''
             )
 
     def select(self, cache_key: str) -> Optional[Response]:
-        with self.db.cursor() as cursor:
+        with closing(self.db.cursor()) as cursor:
             cursor.execute(
                 '''
                     SELECT "pickled_response"
                     FROM "forban_headers"
                     WHERE "key"=?;
                 ''',
-                cache_key,
+                [cache_key],
             )
             row = next(cursor, None)
             if row:
@@ -54,21 +55,22 @@ class HeaderStorage:
         return None
 
     def insert(self, cache_key: str, res: Response) -> None:
-        # pylint: disable=protected-access
+        # body content is stored separately in BodyStorage, and we don't want to modify as a side-effect the `Response` object
+        # we've been given, so we just check the body's already been nulled. Sorry, pylint: disable=protected-access
         assert res._content_consumed
-        res._content = None  # body content is stored separately in BodyStorage
+        assert res._content is None
         pickled_response = pickle.dumps(res)
-        with self.db.cursor() as cursor:
+        with closing(self.db.cursor()) as cursor:
             cursor.execute(
                 '''
                     INSERT INTO "forban_headers"
                     VALUES (?, ?);
                 ''',
-                [(cache_key, pickled_response)],
+                [cache_key, pickled_response],
             )
 
     def delete(self, cache_key: str) -> None:
-        with self.db.cursor() as cursor:
+        with closing(self.db.cursor()) as cursor:
             cursor.execute(
                 '''
                     DELETE FROM "forban_headers"
@@ -126,15 +128,25 @@ class Cache:
                 self.headers.delete(key)
                 res = None
             else:
-                body._content = body  # pylint: disable=protected-access
+                res._content = body  # pylint: disable=protected-access
         log.cache_key = key
         log.cached = (res is not None)
         return res
 
     def put(self, prepared_req: PreparedRequest, res: Response) -> None:
+        res, body = self._copy_response(res)  # before modifying it
         key = self.compute_key(prepared_req)
         self.headers.insert(key, res)
-        self.bodies.write(key, res)
+        self.bodies.write(key, body)
+
+    @staticmethod
+    def _copy_response(res: Response) -> Tuple[Response, bytes]:
+        state = res.__getstate__()
+        body = state['_content']
+        state['_content'] = None
+        copy = Response()
+        copy.__setstate__(state)
+        return copy, body
 
     @staticmethod
     def compute_key(prepared_req: PreparedRequest):
