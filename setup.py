@@ -5,7 +5,9 @@ import setuptools
 import sys
 
 
-install_requires = []
+install_requires = [
+    'requests>=2.25,<3',
+]
 if sys.version_info < (3, 7):
     install_requires.append('dataclasses>=0.8,<1')
 
