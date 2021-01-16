@@ -135,4 +135,4 @@ def test_post_files(client, server):
 
 def test_post_json(client, server):
     res = client.post(f'{server}/echo', json={'a': 'b'})
-    assert res.json() == {'args': {}, 'files': {}, 'form': {}, 'json': {'a': "b"}}
+    assert res.json() == {'args': {}, 'files': {}, 'form': {}, 'json': {'a': 'b'}}
