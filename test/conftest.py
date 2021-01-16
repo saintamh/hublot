@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 from threading import Thread
 
 # 3rd parties
-from flask import Flask, request
+from flask import Flask, jsonify, request
 import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
@@ -58,6 +58,19 @@ def flask_app():
     @app.route('/unique-number')
     def unique_number():
         return str(next(iter_numbers))
+
+    @app.route('/echo', methods=['GET', 'POST'])
+    def echo():
+        return jsonify({
+            'args': request.args,
+            'files': {
+                key: storage.read().decode('UTF-8')
+                for key, storage in request.files.items()
+            },
+            'form': request.form,
+            'json': request.json,
+        })
+
     return app
 
 

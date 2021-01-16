@@ -11,7 +11,7 @@ from typing import Callable, Dict, Optional, Union, Tuple
 from urllib.parse import urlparse
 
 # 3rd parties
-from requests import Request, RequestException, Response, Session
+from requests import PreparedRequest, Request, RequestException, Response, Session
 
 # forban
 from .cache import Cache
@@ -32,10 +32,10 @@ class CourtesySleep:
         self.last_request_per_host: Dict[str, float] = {}
 
     @contextmanager
-    def __call__(self, req: Request, log: LogEntry, courtesy_seconds: Optional[float] = None):
+    def __call__(self, prepared_req: PreparedRequest, log: LogEntry, courtesy_seconds: Optional[float] = None):
         if courtesy_seconds is None:
             courtesy_seconds = self.courtesy_seconds
-        host = urlparse(req.url).hostname
+        host = str(urlparse(prepared_req.url).hostname)
         last_request = self.last_request_per_host.get(host, 0)
         delay = (last_request + courtesy_seconds) - time()
         if delay > 0:
@@ -57,7 +57,6 @@ class Client:
         session: Optional[Session] = None,
         propagate_logs: bool = False,
     ):
-        self.logger = self._init_logger(propagate_logs)
         if isinstance(cache, Path):
             cache = Cache(cache)
         self.cache = cache
@@ -65,6 +64,7 @@ class Client:
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
         self.session = session or Session()
+        self.logger = self._init_logger(propagate_logs)
 
     def fetch(
         self,
@@ -73,11 +73,33 @@ class Client:
         courtesy_seconds: Optional[float] = None,
         **kwargs,
     ) -> Response:
+        prepared_req, request_kwargs = self._prepare(url, **kwargs)
+        log = LogEntry(prepared_req)
+        res = None
+        if self.cache and not force_cache_stale:
+            res = self.cache.get(prepared_req, log)
+        if res is None:
+            with self.courtesy_sleep(prepared_req, log, courtesy_seconds):
+                res = self.session.request(**request_kwargs)
+            if self.cache:
+                self.cache.put(prepared_req, res)
+        self.logger.info('%s', log)
+        return res
+
+    def _prepare(self, url: str, **kwargs) -> Tuple[PreparedRequest, Dict]:
         default_method = (
             'POST' if (kwargs.get('data') is not None or kwargs.get('files') is not None or kwargs.get('json') is not None)
             else 'GET'
         )
         method = kwargs.pop('method', default_method).upper()
+        for arg in ('data', 'files'):
+            if isinstance(kwargs.get(arg), dict):
+                for key, value in list(kwargs[arg].items()):
+                    # Read the files to memory. This is required because this request ends up being prepared twice, once by us and
+                    # once by Requests. This is what requests.models.PreparedRequest.prepare_body does anyway
+                    if callable(getattr(value, 'read', None)):
+                        kwargs[arg][key] = value.read()
+                        value.close()
         req = Request(
             url=url,
             method=method,
@@ -90,23 +112,13 @@ class Client:
             cookies=kwargs.get('cookies'),
         )
         prepared_req = self.session.prepare_request(req)
-        log = LogEntry(prepared_req)
-        res = None
-        if self.cache and not force_cache_stale:
-            res = self.cache.get(prepared_req, log)
-        if res is None:
-            with self.courtesy_sleep(req, log, courtesy_seconds):
-                res = self.session.request(method, url, **kwargs)
-            if self.cache:
-                self.cache.put(prepared_req, res)
-        self.logger.info('%s', log)
-        return res
+        return prepared_req, {'url': url, 'method': method, **kwargs}
 
     def get(self, url: str, **kwargs) -> Response:
         return self.fetch(url, method='GET', **kwargs)
 
-    def post(self, url: str, data=None, json=None, **kwargs) -> Response:
-        return self.fetch(url, method='POST', data=data, json=json, **kwargs)
+    def post(self, url: str, data=None, **kwargs) -> Response:
+        return self.fetch(url, method='POST', data=data, **kwargs)
 
     @staticmethod
     def _init_logger(propagate: bool):

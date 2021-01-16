@@ -104,3 +104,35 @@ def test_courtesy_sleep_as_object(mocked_sleep, server):
     mocked_sleep.assert_called_once()
     delay, = mocked_sleep.call_args[0]
     assert delay == pytest.approx(78, 0.1)
+
+
+def test_post_data(client, server):
+    res = client.post(f'{server}/echo', data={'a': 'b'})
+    assert res.json() == {'args': {}, 'files': {}, 'form': {'a':'b'}, 'json': None}
+
+
+def test_post_open_file(client, server):
+    dummy_file = Path(__file__)
+    res = client.post(f'{server}/echo', data={'a': dummy_file.open('rb')})
+    assert res.json() == {
+        'args': {},
+        'files': {},
+        'form': {'a': dummy_file.read_text('UTF-8')},
+        'json': None,
+    }
+
+
+def test_post_files(client, server):
+    dummy_file = Path(__file__)
+    res = client.post(f'{server}/echo', files={'f': dummy_file.open('rb')})
+    assert res.json() == {
+        'args': {},
+        'files': {'f': dummy_file.read_text('UTF-8')},
+        'form': {},
+        'json': None,
+    }
+
+
+def test_post_json(client, server):
+    res = client.post(f'{server}/echo', json={'a': 'b'})
+    assert res.json() == {'args': {}, 'files': {}, 'form': {}, 'json': {'a': "b"}}
