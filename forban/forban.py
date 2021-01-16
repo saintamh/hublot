@@ -2,9 +2,10 @@
 
 # standards
 from contextlib import contextmanager
+from functools import wraps
 import logging
 from time import sleep, time
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Union, Tuple
 from urllib.parse import urlparse
 
 # 3rd parties
@@ -13,6 +14,9 @@ from requests import Request, RequestException, Response, Session
 # forban
 from .cache import Cache
 from .logs import LogEntry
+
+
+DEFAULT_LOGGER = logging.getLogger('forban')
 
 
 class CourtesySleep:
@@ -54,26 +58,6 @@ class Client:
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
 
-    def fetch_and_parse(
-        self,
-        url: str,
-        parse: Callable[[Response], Any],
-        num_attempts: int=5,
-        **kwargs,
-    ) -> Any:
-        for attempt in range(num_attempts):
-            try:
-                if attempt > 0:
-                    kwargs['force_cache_stale'] = True
-                return parse(self.fetch(url, **kwargs))
-            except (ValueError, RequestException) as error:
-                if attempt < num_attempts - 1:
-                    delay = 5 ** attempt
-                    self.logger.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
-                    sleep(delay)
-                else:
-                    raise
-
     def fetch(
         self,
         url: str,
@@ -81,7 +65,11 @@ class Client:
         courtesy_seconds: Optional[int] = None,
         **kwargs,
     ) -> Response:
-        method = kwargs.pop('method', 'GET').upper()
+        default_method = (
+            'POST' if (kwargs.get('data') is not None or kwargs.get('files') is not None or kwargs.get('json') is not None)
+            else 'GET'
+        )
+        method = kwargs.pop('method', default_method).upper()
         req = Request(
             url=url,
             method=method,
@@ -109,24 +97,8 @@ class Client:
     def get(self, url: str, **kwargs) -> Response:
         return self.fetch(url, method='GET', **kwargs)
 
-    def options(self, url: str, **kwargs) -> Response:
-        return self.fetch(url, method='OPTIONS', **kwargs)
-
-    def head(self, url: str, **kwargs) -> Response:
-        kwargs.setdefault('allow_redirects', False)
-        return self.fetch(url, method='HEAD', **kwargs)
-
     def post(self, url: str, data=None, json=None, **kwargs) -> Response:
         return self.fetch(url, method='POST', data=data, json=json, **kwargs)
-
-    def put(self, url: str, data=None, **kwargs) -> Response:
-        return self.fetch(url, method='PUT', data=data, **kwargs)
-
-    def patch(self, url: str, data=None, **kwargs) -> Response:
-        return self.fetch(url, method='PATCH', data=data, **kwargs)
-
-    def delete(self, url: str, **kwargs) -> Response:
-        return self.fetch(url, method='DELETE', **kwargs)
 
     @staticmethod
     def _init_logger(propagate: bool):
@@ -138,3 +110,35 @@ class Client:
             logger.addHandler(handler)
             logger.propagate = False
         return logger
+
+
+def scraper(
+    no_parens_function: Optional[Callable] = None,
+    *,
+    retry_on: Tuple[type, ...] = (ValueError, RequestException),
+    logger: logging.Logger = DEFAULT_LOGGER,
+    num_attempts: int = 5,
+):
+    if no_parens_function:
+        # decorator is without parentheses
+        return scraper()(no_parens_function)
+
+    def make_wrapper(function: Callable):
+
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            for attempt in range(num_attempts):
+                try:
+                    # if attempt > 0:
+                    #     kwargs['force_cache_stale'] = True
+                    return function(*args, **kwargs)
+                except Exception as error:  # pylint: disable=broad-except
+                    if isinstance(error, retry_on) and attempt < num_attempts - 1:
+                        delay = 5 ** attempt
+                        logger.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
+                        sleep(delay)
+                    else:
+                        raise
+
+        return wrapper
+    return make_wrapper
