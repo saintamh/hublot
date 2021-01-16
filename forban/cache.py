@@ -65,7 +65,7 @@ class HeaderStorage:
         with closing(self.db.cursor()) as cursor:
             cursor.execute(
                 '''
-                    INSERT INTO "forban_headers"
+                    REPLACE INTO "forban_headers"
                     VALUES (?, ?);
                 ''',
                 [cache_key, pickled_response],

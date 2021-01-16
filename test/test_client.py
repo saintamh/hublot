@@ -63,6 +63,17 @@ def test_cache_as_cache_object(server):
     assert one == two  # cached
 
 
+@pytest.mark.usefixtures('mocked_sleep')
+def test_force_cache_stale(server):
+    with TemporaryDirectory() as tmp:
+        client = Client(cache=Cache(Path(tmp)))
+        one = client.get(f'{server}/unique-number').text
+        two = client.get(f'{server}/unique-number', force_cache_stale=True).text
+        three = client.get(f'{server}/unique-number').text
+    assert one != two  # cache not read on 2nd call
+    assert two == three  # but cache was written on 2nd call
+
+
 def test_courtesy_sleep_by_default(mocked_sleep, server):
     client = Client()
     client.get(f'{server}/unique-number')
