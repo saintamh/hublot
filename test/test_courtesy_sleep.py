@@ -9,7 +9,7 @@ from itertools import combinations
 import pytest
 
 # forban
-import forban
+from forban import Client
 from .utils import dummy_response
 
 
@@ -17,29 +17,27 @@ from .utils import dummy_response
     'courtesy_seconds',
     [None, 0, 5, 37],
 )
-def test_courtesy_sleep(mocker, server, courtesy_seconds):
+def test_courtesy_sleep(mocked_sleep, server, courtesy_seconds):
     kwargs = {} if courtesy_seconds is None else {'courtesy_sleep': courtesy_seconds}
-    client = forban.Client(**kwargs)
-    mocker.patch('forban.forban.sleep')
+    client = Client(**kwargs)
     client.fetch(f'{server}/hello')
-    forban.forban.sleep.assert_not_called()  # 1st request, no sleep
+    mocked_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello')
     if courtesy_seconds == 0:
-        forban.forban.sleep.assert_not_called()
+        mocked_sleep.assert_not_called()
     else:
-        forban.forban.sleep.assert_called_once()
-        delay, = forban.forban.sleep.call_args[0]
+        mocked_sleep.assert_called_once()
+        delay, = mocked_sleep.call_args[0]
         assert delay == pytest.approx(courtesy_seconds or 5, 0.1)
 
 
-def test_nonequal_hostnames(mocker):
-    client = forban.Client()
-    mocker.patch('forban.forban.sleep')
+def test_nonequal_hostnames(mocker, mocked_sleep):
+    client = Client()
     mocker.patch.object(client.session, 'request', return_value=dummy_response())
     client.fetch('http://one/')
-    forban.forban.sleep.assert_not_called()
+    mocked_sleep.assert_not_called()
     client.fetch('http://two/')
-    forban.forban.sleep.assert_not_called()
+    mocked_sleep.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -56,11 +54,10 @@ def test_nonequal_hostnames(mocker):
         2,
     )
 )
-def test_equal_hostnames(mocker, url_1, url_2):
-    client = forban.Client()
-    mocker.patch('forban.forban.sleep')
+def test_equal_hostnames(mocker, mocked_sleep, url_1, url_2):
+    client = Client()
     mocker.patch.object(client.session, 'request', return_value=dummy_response())
     client.fetch(url_1)
-    forban.forban.sleep.assert_not_called()  # 1st request, no sleep
+    mocked_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(url_2)
-    forban.forban.sleep.assert_called_once()
+    mocked_sleep.assert_called_once()

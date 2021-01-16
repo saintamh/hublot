@@ -4,6 +4,7 @@
 from contextlib import contextmanager
 from functools import wraps
 import logging
+from pathlib import Path
 from time import sleep, time
 from typing import Callable, Dict, Optional, Union, Tuple
 from urllib.parse import urlparse
@@ -21,8 +22,8 @@ DEFAULT_LOGGER = logging.getLogger('forban')
 
 class CourtesySleep:
 
-    def __init__(self, courtesy_seconds: int):
-        self.courtesy_seconds = courtesy_seconds
+    def __init__(self, courtesy_seconds: Optional[int]):
+        self.courtesy_seconds = courtesy_seconds or 0
         self.last_request_per_host: Dict[str, float] = {}
 
     @contextmanager
@@ -46,12 +47,14 @@ class Client:
 
     def __init__(
         self,
-        cache: Cache = None,
-        session: Session = None,
-        courtesy_sleep: Union[CourtesySleep, int] = 5,
+        cache: Optional[Union[Path, Cache]] = None,
+        session: Optional[Session] = None,
+        courtesy_sleep: Optional[Union[CourtesySleep, int]] = 5,
         propagate_logs: bool = False,
     ):
         self.logger = self._init_logger(propagate_logs)
+        if isinstance(cache, Path):
+            cache = Cache(cache)
         self.cache = cache
         self.session = session or Session()
         if not isinstance(courtesy_sleep, CourtesySleep):

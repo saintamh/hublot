@@ -3,6 +3,7 @@
 # It's the pytest way, pylint: disable=redefined-outer-name
 
 # standards
+from itertools import count
 from pathlib import Path
 from random import randrange
 from tempfile import TemporaryDirectory
@@ -14,7 +15,7 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
-from forban import Cache, Client
+from forban import Cache, Client, forban
 from forban.cache import BodyStorage, HeaderStorage
 
 
@@ -53,6 +54,10 @@ def flask_app():
     def method_test():
         return request.method
 
+    iter_numbers = count()
+    @app.route('/unique-number')
+    def unique_number():
+        return str(next(iter_numbers))
     return app
 
 
@@ -69,3 +74,9 @@ def server():
     finally:
         server.shutdown()
         thread.join()
+
+
+@pytest.fixture
+def mocked_sleep(mocker):
+    mocker.patch('forban.forban.sleep')
+    return forban.sleep
