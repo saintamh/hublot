@@ -83,7 +83,8 @@ class HeaderStorage:
 class BodyStorage:
     """
     Stores the body data from cached responses. It's important to keep these in flat files so that they can easily be inspected for
-    debugging -- if they were just pickled `Response` objects it wouldn't be very convenient.
+    debugging -- if they were just pickled `Response` objects it wouldn't be very convenient. It's part of the contract for this
+    class that the storage files are always just the gzipped body.
     """
 
     def __init__(self, root_path: Path):

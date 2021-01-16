@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# standards
+import gzip
+
 # 3rd parties
 import pytest
 
@@ -30,3 +33,16 @@ def test_body_storage(body_storage, body):
     key = 'somestring'
     body_storage.write(key, body)
     assert body_storage.read(key) == body
+
+
+def test_body_storage_files_contain_gzipped_body(body_storage):
+    """
+    This is part of the contract for BodyStorage -- the files stored on disk are just the gzipped body
+    """
+    assert not list(body_storage.root_path.glob('*/*'))
+    key = 'somestring'
+    body = b'This is my response body.'
+    body_storage.write(key, body)
+    body_file, = body_storage.root_path.glob('*/*')
+    with gzip.open(body_file, 'rb') as file_in:
+        assert file_in.read() == body
