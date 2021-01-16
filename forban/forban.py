@@ -2,6 +2,7 @@
 
 # standards
 from contextlib import contextmanager
+from datetime import timedelta
 from functools import wraps
 import logging
 from pathlib import Path
@@ -22,12 +23,16 @@ DEFAULT_LOGGER = logging.getLogger('forban')
 
 class CourtesySleep:
 
-    def __init__(self, courtesy_seconds: Optional[int]):
-        self.courtesy_seconds = courtesy_seconds or 0
+    def __init__(self, courtesy_seconds: Optional[Union[float, timedelta]]):
+        if courtesy_seconds is None:
+            courtesy_seconds = 0
+        elif isinstance(courtesy_seconds, timedelta):
+            courtesy_seconds = courtesy_seconds.total_seconds()
+        self.courtesy_seconds = courtesy_seconds
         self.last_request_per_host: Dict[str, float] = {}
 
     @contextmanager
-    def __call__(self, req: Request, log: LogEntry, courtesy_seconds: Optional[int] = None):
+    def __call__(self, req: Request, log: LogEntry, courtesy_seconds: Optional[float] = None):
         if courtesy_seconds is None:
             courtesy_seconds = self.courtesy_seconds
         host = urlparse(req.url).hostname
@@ -48,24 +53,24 @@ class Client:
     def __init__(
         self,
         cache: Optional[Union[Path, Cache]] = None,
+        courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
         session: Optional[Session] = None,
-        courtesy_sleep: Optional[Union[CourtesySleep, int]] = 5,
         propagate_logs: bool = False,
     ):
         self.logger = self._init_logger(propagate_logs)
         if isinstance(cache, Path):
             cache = Cache(cache)
         self.cache = cache
-        self.session = session or Session()
         if not isinstance(courtesy_sleep, CourtesySleep):
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
+        self.session = session or Session()
 
     def fetch(
         self,
         url: str,
         force_cache_stale: bool = False,
-        courtesy_seconds: Optional[int] = None,
+        courtesy_seconds: Optional[float] = None,
         **kwargs,
     ) -> Response:
         default_method = (
