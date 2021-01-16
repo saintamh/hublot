@@ -7,7 +7,8 @@ from collections import OrderedDict
 import pytest
 
 # forban
-from forban.forban import Cache, LogEntry
+from forban.cache import Cache
+from forban.logs import LogEntry
 from .utils import dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 

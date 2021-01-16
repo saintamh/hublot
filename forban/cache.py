@@ -76,8 +76,17 @@ class HeaderStorage:
                     DELETE FROM "forban_headers"
                     WHERE "key"=?;
                 ''',
-                cache_key,
+                [cache_key],
             )
+
+    def count(self) -> int:
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute(
+                '''
+                    SELECT COUNT(1) FROM "forban_headers";
+                ''',
+            )
+            return next(cursor)[0]
 
 
 class BodyStorage:
