@@ -4,7 +4,7 @@
 from contextlib import contextmanager
 import logging
 from time import sleep, time
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 from urllib.parse import urlparse
 
 # 3rd parties
@@ -19,7 +19,7 @@ class CourtesySleep:
 
     def __init__(self, courtesy_seconds: int):
         self.courtesy_seconds = courtesy_seconds
-        self.last_request_per_host = {}
+        self.last_request_per_host: Dict[str, float] = {}
 
     @contextmanager
     def __call__(self, req: Request, log: LogEntry, courtesy_seconds: Optional[int] = None):
@@ -94,7 +94,7 @@ class Client:
             cookies=kwargs.get('cookies'),
         )
         prepared_req = self.session.prepare_request(req)
-        log = LogEntry(req)
+        log = LogEntry(prepared_req)
         res = None
         if self.cache and not force_cache_stale:
             res = self.cache.get(prepared_req, log)

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# We use `Response` object internals in here, we're ok with that, pylint: disable=protected-access
+
 # standards
 from contextlib import closing
 import gzip
@@ -56,9 +58,9 @@ class HeaderStorage:
 
     def insert(self, cache_key: str, res: Response) -> None:
         # body content is stored separately in BodyStorage, and we don't want to modify as a side-effect the `Response` object
-        # we've been given, so we just check the body's already been nulled. Sorry, pylint: disable=protected-access
-        assert res._content_consumed
-        assert res._content is None
+        # we've been given, so we just check the body's already been nulled.
+        assert res._content_consumed  # type: ignore
+        assert res._content is None  # type: ignore
         pickled_response = pickle.dumps(res)
         with closing(self.db.cursor()) as cursor:
             cursor.execute(
@@ -138,7 +140,7 @@ class Cache:
                 self.headers.delete(key)
                 res = None
             else:
-                res._content = body  # pylint: disable=protected-access
+                res._content = body  # type: ignore
         log.cache_key = key
         log.cached = (res is not None)
         return res
@@ -151,11 +153,11 @@ class Cache:
 
     @staticmethod
     def _copy_response(res: Response) -> Tuple[Response, bytes]:
-        state = res.__getstate__()
+        state = res.__getstate__()  # type: ignore
         body = state['_content']
         state['_content'] = None
         copy = Response()
-        copy.__setstate__(state)
+        copy.__setstate__(state)  # type: ignore
         return copy, body
 
     @staticmethod

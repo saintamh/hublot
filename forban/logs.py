@@ -2,6 +2,7 @@
 
 # standards
 from dataclasses import dataclass
+from typing import Optional
 
 # 3rd parties
 from requests import PreparedRequest
@@ -10,9 +11,9 @@ from requests import PreparedRequest
 @dataclass(frozen=False)
 class LogEntry:
     prepared_req: PreparedRequest
-    cache_key: str = None
-    cached: bool = None
-    courtesy_seconds: int = None
+    cache_key: Optional[str] = None
+    cached: Optional[bool] = None
+    courtesy_seconds: Optional[float] = None
 
     def _compose_line(self):
         if self.cache_key:
@@ -38,4 +39,3 @@ class LogEntry:
 
     def __str__(self):
         return ''.join(self._compose_line())
-

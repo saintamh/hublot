@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 # 3rd parties
 from requests import PreparedRequest, Response
+from requests.structures import CaseInsensitiveDict
 
 
 def dummy_prepared_request(
@@ -41,7 +42,7 @@ def dummy_response(
     res = Response()
     res.status_code = status_code
     res.reason = reason
-    res.headers = headers or {}
+    res.headers = CaseInsensitiveDict(headers or {})
     res.url = url
     res.raw = BytesIO(data)
     return res
