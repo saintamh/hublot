@@ -13,13 +13,19 @@ from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
 from forban import Cache
-from forban.cache import HeaderStorage
+from forban.cache import BodyStorage, HeaderStorage
 
 
 @pytest.fixture
 def header_storage():
     with TemporaryDirectory() as temp_root:
         yield HeaderStorage(Path(temp_root))
+
+
+@pytest.fixture
+def body_storage():
+    with TemporaryDirectory() as temp_root:
+        yield BodyStorage(Path(temp_root))
 
 
 @pytest.fixture
