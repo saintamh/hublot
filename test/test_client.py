@@ -153,3 +153,25 @@ def test_post_json(client, server):
 def test_http_errors_are_raised(client, server):
     with pytest.raises(HTTPError):
         client.get(f'{server}/fail-with-random-value')
+
+
+def test_redirect(client, server):
+    res = client.get(f'{server}/redirect/chain/1')
+    assert res.status_code == 200
+    assert res.text == 'Landed'
+
+
+def test_no_redirect(client, server):
+    res = client.get(f'{server}/redirect/chain/1', allow_redirects=False)
+    assert res.status_code == 302
+    assert res.text == 'Bounce 1'
+
+
+@pytest.mark.usefixtures('mocked_sleep')
+def test_redirect_response_bodies(cache, server):
+    for _ in (1, 2):
+        client = Client(cache=cache)
+        res = client.get(f'{server}/redirect/chain/1')
+        assert res.status_code == 200
+        assert res.text == 'Landed'
+        assert [r.text for r in res.history] == ['Bounce 1', 'Bounce 2']

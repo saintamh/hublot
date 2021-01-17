@@ -96,6 +96,26 @@ def flask_app():
             res.set_cookie(key, value)
         return res
 
+    @app.route('/redirect/chain/1')
+    def redirect_chain_1():
+        res = make_response('Bounce 1', 302)
+        res.headers['Location'] = '/redirect/chain/2'
+        res.set_cookie('redirect1', 'yes')
+        return res
+
+    @app.route('/redirect/chain/2')
+    def redirect_chain_2():
+        res = make_response('Bounce 2', 302)
+        res.headers['Location'] = '/redirect/chain/3'
+        res.set_cookie('redirect2', 'yes')
+        return res
+
+    @app.route('/redirect/chain/3')
+    def redirect_chain_3():
+        res = make_response('Landed')
+        res.set_cookie('redirect3', 'yes')
+        return res
+
     return app
 
 

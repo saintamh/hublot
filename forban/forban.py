@@ -97,7 +97,8 @@ class Client:
         if self.cache and not force_cache_stale:
             res = self.cache.get(prepared_req, log)
         if res is not None:
-            self.session.cookies.extract_cookies(MockResponse(res), MockRequest(prepared_req))  # type: ignore
+            for r in res.history + [res]:
+                self.session.cookies.extract_cookies(MockResponse(r), MockRequest(prepared_req))  # type: ignore
         else:
             with self.courtesy_sleep(prepared_req, log, courtesy_seconds):
                 res = self.session.request(**request_kwargs)
