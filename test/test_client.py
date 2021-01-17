@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 
 # 3rd parties
 import pytest
+from requests import HTTPError
 
 # forban
 from forban import Cache, Client, CourtesySleep
@@ -147,3 +148,8 @@ def test_post_files(client, server):
 def test_post_json(client, server):
     res = client.post(f'{server}/echo', json={'a': 'b'})
     assert res.json() == {'args': {}, 'files': {}, 'form': {}, 'json': {'a': 'b'}}
+
+
+def test_http_errors_are_raised(client, server):
+    with pytest.raises(HTTPError):
+        client.get(f'{server}/fail-with-random-value')

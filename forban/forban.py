@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 # 3rd parties
 from requests import PreparedRequest, Request, Response, Session
+from requests.cookies import MockRequest
 
 # forban
 from .cache import Cache
@@ -95,7 +96,9 @@ class Client:
         res = None
         if self.cache and not force_cache_stale:
             res = self.cache.get(prepared_req, log)
-        if res is None:
+        if res is not None:
+            self.session.cookies.extract_cookies(MockResponse(res), MockRequest(prepared_req))  # type: ignore
+        else:
             with self.courtesy_sleep(prepared_req, log, courtesy_seconds):
                 res = self.session.request(**request_kwargs)
             if self.cache:
@@ -149,6 +152,24 @@ class Client:
             logger.addHandler(handler)
             logger.propagate = False
         return logger
+
+
+class MockResponse:
+
+    def __init__(self, response: Response):
+        self.response = response
+
+    def info(self):
+        return self
+
+    def get_all(self, name, failobj=None):
+        # This is a mock of `email.message.EmailMessage.get_all` -- ``Return a list of all the values for the field named name. If
+        # there are no such named headers in the message, failobj is returned''
+        #
+        # See https://docs.python.org/3.8/library/email.message.html#email.message.EmailMessage.get_all
+        if name in self.response.headers:
+            return [self.response.headers[name]]
+        return failobj
 
 
 def scraper(

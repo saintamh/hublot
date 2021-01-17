@@ -5,12 +5,13 @@
 # standards
 from itertools import count
 from pathlib import Path
-from random import random, randrange
+from random import choices, random, randrange
+from string import ascii_letters
 from tempfile import TemporaryDirectory
 from threading import Thread
 
 # 3rd parties
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, make_response, request
 import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
@@ -84,6 +85,17 @@ def flask_app():
             return f'crash {num_failures}', 500
         return f'success after {num_failures} failures', 200
 
+    @app.route('/cookies/get')
+    def get_cookie():
+        return request.cookies
+
+    @app.route('/cookies/set')
+    def set_cookie():
+        res = make_response()
+        for key, value in request.args.items():
+            res.set_cookie(key, value)
+        return res
+
     return app
 
 
@@ -106,3 +118,8 @@ def server():
 def mocked_sleep(mocker):
     mocker.patch('forban.forban.sleep')
     return forban.sleep
+
+
+@pytest.fixture
+def unique_key():
+    return ''.join(choices(ascii_letters, k=32))
