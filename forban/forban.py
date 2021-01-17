@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 import threading
 from time import sleep, time
-from typing import Any, Callable, Dict, Optional, Union, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 # 3rd parties
@@ -176,7 +176,7 @@ class MockResponse:
 def scraper(
     no_parens_function: Optional[Callable] = None,
     *,
-    retry_on: Tuple[type, ...] = (),
+    retry_on: Sequence[type] = (),
     num_attempts: int = 5,
 ):
     if no_parens_function:
