@@ -13,10 +13,11 @@ from typing import Any, Callable, Dict, Optional, Union, Tuple
 from urllib.parse import urlparse
 
 # 3rd parties
-from requests import PreparedRequest, Request, RequestException, Response, Session
+from requests import PreparedRequest, Request, Response, Session
 
 # forban
 from .cache import Cache
+from .exceptions import ScraperError
 from .logs import LogEntry
 
 
@@ -82,6 +83,7 @@ class Client:
         self,
         url: str,
         courtesy_seconds: Optional[float] = None,
+        raise_for_status: bool = True,
         **kwargs,
     ) -> Response:
         frame = _SCRAPER_LOCAL.stack[-1]
@@ -99,7 +101,8 @@ class Client:
             if self.cache:
                 self.cache.put(prepared_req, res)
         self.logger.info('%s', log)
-        res.raise_for_status()
+        if raise_for_status:
+            res.raise_for_status()
         return res
 
     def _prepare(self, url: str, **kwargs) -> Tuple[PreparedRequest, Dict]:
@@ -167,7 +170,7 @@ def scraper(
         finally:
             _SCRAPER_LOCAL.stack.pop()
 
-    retry_on = (ValueError, RequestException, *retry_on)
+    retry_on = (ScraperError, *retry_on)
 
     def make_wrapper(function: Callable):
         @wraps(function)

@@ -5,7 +5,7 @@
 # standards
 from itertools import count
 from pathlib import Path
-from random import randrange
+from random import random, randrange
 from tempfile import TemporaryDirectory
 from threading import Thread
 
@@ -70,6 +70,10 @@ def flask_app():
             'form': request.form,
             'json': request.json,
         })
+
+    @app.route('/fail-with-random-value')
+    def fail_with_random_value():
+        return str(random()), 500
 
     num_failures_by_key = {}
     @app.route('/fail-twice-then-succeed/<key>')
