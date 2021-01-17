@@ -2,12 +2,14 @@
 
 # standards
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import wraps
 import logging
 from pathlib import Path
+import threading
 from time import sleep, time
-from typing import Callable, Dict, Optional, Union, Tuple
+from typing import Any, Callable, Dict, Optional, Union, Tuple
 from urllib.parse import urlparse
 
 # 3rd parties
@@ -19,6 +21,16 @@ from .logs import LogEntry
 
 
 DEFAULT_LOGGER = logging.getLogger('forban')
+
+
+@dataclass
+class ThreadLocalData:
+    scraper_kwargs: Dict[str, Any] = field(default_factory=dict)
+    logger: Optional[logging.Logger] = None
+
+
+_SCRAPER_LOCAL = threading.local()
+_SCRAPER_LOCAL.stack = [ThreadLocalData()]
 
 
 class CourtesySleep:
@@ -69,10 +81,13 @@ class Client:
     def fetch(
         self,
         url: str,
-        force_cache_stale: bool = False,
         courtesy_seconds: Optional[float] = None,
         **kwargs,
     ) -> Response:
+        frame = _SCRAPER_LOCAL.stack[-1]
+        kwargs.update(frame.scraper_kwargs)
+        frame.logger = self.logger
+        force_cache_stale = kwargs.pop('force_cache_stale', False)
         prepared_req, request_kwargs = self._prepare(url, **kwargs)
         log = LogEntry(prepared_req)
         res = None
@@ -84,6 +99,7 @@ class Client:
             if self.cache:
                 self.cache.put(prepared_req, res)
         self.logger.info('%s', log)
+        res.raise_for_status()
         return res
 
     def _prepare(self, url: str, **kwargs) -> Tuple[PreparedRequest, Dict]:
@@ -135,30 +151,40 @@ class Client:
 def scraper(
     no_parens_function: Optional[Callable] = None,
     *,
-    retry_on: Tuple[type, ...] = (ValueError, RequestException),
-    logger: logging.Logger = DEFAULT_LOGGER,
+    retry_on: Tuple[type, ...] = (),
     num_attempts: int = 5,
 ):
     if no_parens_function:
         # decorator is without parentheses
         return scraper()(no_parens_function)
 
-    def make_wrapper(function: Callable):
+    @contextmanager
+    def scraper_stack_frame():
+        frame = ThreadLocalData()
+        _SCRAPER_LOCAL.stack.append(frame)
+        try:
+            yield frame
+        finally:
+            _SCRAPER_LOCAL.stack.pop()
 
+    retry_on = (ValueError, RequestException, *retry_on)
+
+    def make_wrapper(function: Callable):
         @wraps(function)
         def wrapper(*args, **kwargs):
-            for attempt in range(num_attempts):
-                try:
-                    # if attempt > 0:
-                    #     kwargs['force_cache_stale'] = True
-                    return function(*args, **kwargs)
-                except Exception as error:  # pylint: disable=broad-except
-                    if isinstance(error, retry_on) and attempt < num_attempts - 1:
-                        delay = 5 ** attempt
-                        logger.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
-                        sleep(delay)
-                    else:
-                        raise
-
+            with scraper_stack_frame() as frame:
+                for attempt in range(num_attempts):
+                    try:
+                        if attempt > 0:
+                            frame.scraper_kwargs['force_cache_stale'] = True
+                        return function(*args, **kwargs)
+                    except Exception as error:  # pylint: disable=broad-except
+                        if isinstance(error, retry_on) and attempt < num_attempts - 1:
+                            delay = 5 ** attempt
+                            if frame.logger:
+                                frame.logger.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
+                            sleep(delay)
+                        else:
+                            raise
         return wrapper
     return make_wrapper

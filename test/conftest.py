@@ -71,6 +71,15 @@ def flask_app():
             'json': request.json,
         })
 
+    num_failures_by_key = {}
+    @app.route('/fail-twice-then-succeed/<key>')
+    def fail_twice_then_succeed(key):
+        num_failures = num_failures_by_key.get(key, 0)
+        num_failures_by_key[key] = num_failures + 1
+        if num_failures < 2:
+            return f'crash {num_failures}', 500
+        return f'success after {num_failures} failures', 200
+
     return app
 
 
