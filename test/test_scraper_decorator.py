@@ -47,7 +47,7 @@ def test_scraper_decorator_num_attempts(client, server, unique_key):
 
 
 @pytest.mark.usefixtures('mocked_sleep')
-def test_scraper_decorator_doesnt_catch_other_exceptions(_key):
+def test_scraper_decorator_doesnt_catch_other_exceptions():
     @scraper
     def fetch():
         raise KeyError('x')
