@@ -65,3 +65,19 @@ def test_scraper_decorator_retry_on():
             raise KeyError('x')
         return f'Success after {i} attempts'
     assert fetch() == 'Success after 3 attempts'
+
+
+def test_if_scraper_returns_generator_it_gets_consumed():
+    @scraper
+    def fetch():
+        yield 1
+        yield 2
+        yield 3
+    assert fetch() == [1, 2, 3]
+
+
+def test_if_scraper_returns_iterator_it_gets_consumed():
+    @scraper
+    def fetch():
+        return (i for i in range(1, 4))
+    assert fetch() == [1, 2, 3]

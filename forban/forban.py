@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 import threading
 from time import sleep, time
+from types import GeneratorType
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
@@ -202,7 +203,10 @@ def scraper(
                     try:
                         if attempt > 0:
                             frame.scraper_kwargs['force_cache_stale'] = True
-                        return function(*args, **kwargs)
+                        payload = function(*args, **kwargs)
+                        if isinstance(payload, GeneratorType):
+                            payload = list(payload)
+                        return payload
                     except Exception as error:  # pylint: disable=broad-except
                         if isinstance(error, retry_on) and attempt < num_attempts - 1:
                             delay = 5 ** attempt
