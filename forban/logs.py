@@ -28,7 +28,7 @@ class LogEntry:
         pr = self.prepared_req
         yield pr.url
         if pr.method != 'GET':
-            yield f'[{pr.method}'
+            yield f' [{pr.method}'
             try:
                 length = int(pr.headers.get('Content-Length', 0))
             except ValueError:
