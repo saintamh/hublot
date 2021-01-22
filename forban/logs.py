@@ -11,13 +11,13 @@ from requests import PreparedRequest
 @dataclass(frozen=False)
 class LogEntry:
     prepared_req: PreparedRequest
-    cache_key: Optional[str] = None
+    cache_key_str: Optional[str] = None
     cached: Optional[bool] = None
     courtesy_seconds: Optional[float] = None
 
     def _compose_line(self):
-        if self.cache_key:
-            yield f'[{self.cache_key}] '
+        if self.cache_key_str:
+            yield f'[{self.cache_key_str}] '
         if self.cached:
             yield '[cached] '
         elif (self.courtesy_seconds or 0) > 0.5:

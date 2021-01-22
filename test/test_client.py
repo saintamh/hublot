@@ -10,7 +10,7 @@ import pytest
 from requests import HTTPError
 
 # forban
-from forban import Cache, Client, CourtesySleep
+from forban import Client, CourtesySleep, DiskCache
 
 
 @pytest.mark.parametrize(
@@ -58,7 +58,7 @@ def test_cache_as_path(server):
 @pytest.mark.usefixtures('mocked_sleep')
 def test_cache_as_cache_object(server):
     with TemporaryDirectory() as tmp:
-        client = Client(cache=Cache(Path(tmp)))
+        client = Client(cache=DiskCache(Path(tmp)))
         one = client.get(f'{server}/unique-number').text
         two = client.get(f'{server}/unique-number').text
     assert one == two  # cached
@@ -67,7 +67,7 @@ def test_cache_as_cache_object(server):
 @pytest.mark.usefixtures('mocked_sleep')
 def test_force_cache_stale(server):
     with TemporaryDirectory() as tmp:
-        client = Client(cache=Cache(Path(tmp)))
+        client = Client(cache=DiskCache(Path(tmp)))
         one = client.get(f'{server}/unique-number').text
         two = client.get(f'{server}/unique-number', force_cache_stale=True).text
         three = client.get(f'{server}/unique-number').text

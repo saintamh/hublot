@@ -15,9 +15,9 @@ def test_cookies_are_saved(client, server):
 
 
 @pytest.mark.usefixtures('mocked_sleep')
-def test_cookies_are_set_when_running_from_cache(cache, server):
+def test_cookies_are_set_when_running_from_cache(reinstantiable_client, server):
     for _ in (1, 2):
-        client = Client(cache=cache)
+        client = reinstantiable_client()
         assert client.get(f'{server}/cookies/get').json() == {}
         client.get(f'{server}/cookies/set?coo=kie')
         assert client.get(f'{server}/cookies/get').json() == {'coo': 'kie'}

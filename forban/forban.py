@@ -18,7 +18,7 @@ from requests import PreparedRequest, Request, Response, Session
 from requests.cookies import MockRequest
 
 # forban
-from .cache import Cache
+from .cache import DiskCache
 from .exceptions import ScraperError
 from .logs import LogEntry
 
@@ -67,13 +67,13 @@ class Client:
 
     def __init__(
         self,
-        cache: Optional[Union[Path, Cache]] = None,
+        cache: Optional[Union[Path, DiskCache]] = None,
         courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
         session: Optional[Session] = None,
         propagate_logs: bool = False,
     ):
         if isinstance(cache, Path):
-            cache = Cache(cache)
+            cache = DiskCache(cache)
         self.cache = cache
         if not isinstance(courtesy_sleep, CourtesySleep):
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
@@ -99,6 +99,7 @@ class Client:
             res = self.cache.get(prepared_req, log)
         if res is not None:
             for r in res.history + [res]:
+                print(res.headers.get('Set-Cookie'))
                 self.session.cookies.extract_cookies(MockResponse(r), MockRequest(prepared_req))  # type: ignore
         else:
             with self.courtesy_sleep(prepared_req, log, courtesy_seconds):

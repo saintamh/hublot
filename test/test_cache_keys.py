@@ -7,7 +7,7 @@ from collections import OrderedDict
 import pytest
 
 # forban
-from forban.cache import Cache
+from forban.cache import CacheKey, DiskCache
 from forban.logs import LogEntry
 from .utils import dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
@@ -16,7 +16,7 @@ def test_simple_cache_use(cache):
     prepared_req = dummy_prepared_request()
     log = LogEntry(prepared_req)
     assert cache.get(prepared_req, log) is None
-    assert log.cache_key is not None
+    assert log.cache_key_str is not None
     cache.put(prepared_req, dummy_response())
     assert cache.get(prepared_req, log).__getstate__() == dummy_response().__getstate__()
 
@@ -64,6 +64,12 @@ EQUIVALENCIES = [
         {'url': 'http://cache-test/header-test-2', 'headers': {'X-TEST': '1'}},
     ],
 
+    # The order of the headers in the dict doesn't matter of course
+    [
+        {'url': 'http://cache-test/header-order-test', 'headers': {'X-Test-A': 'a', 'X-Test-B': 'b'}},
+        {'url': 'http://cache-test/header-order-test', 'headers': {'X-Test-B': 'b', 'X-Test-A': 'a'}},
+    ],
+
     # Setting a cookie via `cookies` is the same as setting it manually in a header
     [
         {'url': 'http://cache-test/cookie-test', 'cookies': {'a': '1'}, 'headers': {}},
@@ -97,8 +103,8 @@ EQUIVALENCIES = [
     iter_nonequal_pairs(EQUIVALENCIES),
 )
 def test_unique_keys(config_1, config_2):
-    key = Cache.compute_key(dummy_prepared_request(**config_1))
-    other_key = Cache.compute_key(dummy_prepared_request(**config_2))
+    key = DiskCache.compute_key(dummy_prepared_request(**config_1))
+    other_key = DiskCache.compute_key(dummy_prepared_request(**config_2))
     assert key != other_key
 
 
@@ -118,8 +124,8 @@ def test_unique_requests(cache, config_1, config_2):
     iter_equal_pairs(EQUIVALENCIES),
 )
 def test_equivalent_keys(config_1, config_2):
-    key_1 = Cache.compute_key(dummy_prepared_request(**config_1))
-    key_2 = Cache.compute_key(dummy_prepared_request(**config_2))
+    key_1 = DiskCache.compute_key(dummy_prepared_request(**config_1))
+    key_2 = DiskCache.compute_key(dummy_prepared_request(**config_2))
     assert key_1 == key_2, (config_1, config_2)
 
 
@@ -139,11 +145,27 @@ def test_equivalent_requests(cache, config_1, config_2):
 def test_cache_updates_log_entry_attributes(cache):
     prepared_req = dummy_prepared_request()
     log = LogEntry(prepared_req)
-    assert log.cache_key is None
+    assert log.cache_key_str is None
     assert log.cached is None
     cache.get(prepared_req, log)
-    assert log.cache_key is not None
+    assert log.cache_key_str is not None
     assert log.cached is False
     cache.put(prepared_req, dummy_response())
     cache.get(prepared_req, log)
     assert log.cached is True
+
+
+@pytest.mark.parametrize(
+    'user_specified, expected_path, expected_unique_str',
+    [
+        ('simple-string', '/simple-string', 'simple-string'),
+        ('space string', '/space%20string', 'space%20string'),
+        ('/slash/string', '/%2Fslash%2Fstring', '%2Fslash%2Fstring'),
+        (('item', '123'), '/item/123', 'item/123'),
+        (('slash', '/'), '/slash/%2F', 'slash/%2F'),
+    ]
+)
+def test_cache_key_parsing(user_specified, expected_path, expected_unique_str):
+    parsed = CacheKey.parse(user_specified)
+    assert ''.join(f'/{p}' for p in parsed.path_parts) == expected_path
+    assert parsed.unique_str == expected_unique_str

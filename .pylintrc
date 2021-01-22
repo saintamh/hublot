@@ -2,6 +2,7 @@
 
 disable=
     missing-docstring,
+    no-else-return,  # an 'else' after a return can actually improve legibility
     too-few-public-methods,  # sometimes a class has one public method, still makes sense
 
 

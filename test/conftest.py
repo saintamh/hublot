@@ -16,7 +16,7 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
-from forban import Cache, Client, forban
+from forban import Client, DiskCache, forban
 from forban.cache import BodyStorage, HeaderStorage
 
 
@@ -33,9 +33,27 @@ def body_storage():
 
 
 @pytest.fixture
+def reinstantiable_cache():
+    """
+    A callable that can be called repeatedly to reinstantiate the same cache. The idea is to test what happens if you discard a
+    cache object then re-create it, with the same parameters, as happens when you re-run a script.
+    """
+    with TemporaryDirectory() as temp_root:
+        yield lambda: DiskCache(temp_root)
+
+
+@pytest.fixture
+def reinstantiable_client(reinstantiable_cache):
+    """
+    A callable that can be called repeatedly to reinstantiate a Client with the same cache parameters.
+    """
+    yield lambda: Client(cache=reinstantiable_cache())
+
+
+@pytest.fixture
 def cache():
     with TemporaryDirectory() as temp_root:
-        yield Cache(temp_root)
+        yield DiskCache(temp_root)
 
 
 @pytest.fixture
