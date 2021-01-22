@@ -99,7 +99,6 @@ class Client:
             res = self.cache.get(prepared_req, log)
         if res is not None:
             for r in res.history + [res]:
-                print(res.headers.get('Set-Cookie'))
                 self.session.cookies.extract_cookies(MockResponse(r), MockRequest(prepared_req))  # type: ignore
         else:
             with self.courtesy_sleep(prepared_req, log, courtesy_seconds):
