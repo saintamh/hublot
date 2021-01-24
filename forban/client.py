@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 
 # standards
-from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import timedelta
-from functools import wraps
 import logging
 from pathlib import Path
-import threading
-from time import sleep, time
-from types import GeneratorType
-from typing import Callable, Dict, Optional, Sequence, Union
-from urllib.parse import urljoin, urlparse
+from typing import Optional, Union
+from urllib.parse import urljoin
 
 # 3rd parties
 from requests import PreparedRequest, Request, Response, Session, TooManyRedirects
@@ -20,7 +14,8 @@ from requests.structures import CaseInsensitiveDict
 
 # forban
 from .cache import Cache, UserSpecifiedCacheKey
-from .exceptions import ScraperError
+from .courtesy import CourtesySleep
+from .decorator import SCRAPER_LOCAL
 from .logs import LogEntry
 from .version import FORBAN_VERSION
 
@@ -29,43 +24,6 @@ DEFAULT_LOGGER = logging.getLogger('forban')
 
 
 MAX_REDIRECTS = 10
-
-
-@dataclass
-class ThreadLocalData:
-    force_cache_stale: bool = False
-    logger: Optional[logging.Logger] = None
-
-
-_SCRAPER_LOCAL = threading.local()
-_SCRAPER_LOCAL.stack = [ThreadLocalData()]
-
-
-class CourtesySleep:
-
-    def __init__(self, courtesy_seconds: Optional[Union[float, timedelta]]):
-        if courtesy_seconds is None:
-            courtesy_seconds = 0
-        elif isinstance(courtesy_seconds, timedelta):
-            courtesy_seconds = courtesy_seconds.total_seconds()
-        self.courtesy_seconds = courtesy_seconds
-        self.last_request_per_host: Dict[str, float] = {}
-
-    @contextmanager
-    def __call__(self, preq: PreparedRequest, log: LogEntry, courtesy_seconds: Optional[float] = None):
-        if courtesy_seconds is None:
-            courtesy_seconds = self.courtesy_seconds
-        host = str(urlparse(preq.url).hostname)
-        last_request = self.last_request_per_host.get(host, 0)
-        delay = (last_request + courtesy_seconds) - time()
-        if delay > 0:
-            log.courtesy_seconds = delay
-            sleep(delay)
-        try:
-            yield
-        finally:
-            # NB we store the time after the request is complete
-            self.last_request_per_host[host] = time()
 
 
 class Client:
@@ -98,7 +56,7 @@ class Client:
         _redirected_from: Optional[Response] = None,
         **request_contents,
     ) -> Response:
-        frame = _SCRAPER_LOCAL.stack[-1]
+        frame = SCRAPER_LOCAL.stack[-1]
         if frame.force_cache_stale:
             force_cache_stale = True
         frame.logger = self.logger
@@ -199,48 +157,3 @@ class MockResponse:
         if name in self.response.headers:
             return [self.response.headers[name]]
         return failobj
-
-
-def scraper(
-    no_parens_function: Optional[Callable] = None,
-    *,
-    retry_on: Sequence[type] = (),
-    num_attempts: int = 5,
-):
-    if no_parens_function:
-        # decorator is without parentheses
-        return scraper()(no_parens_function)
-
-    @contextmanager
-    def scraper_stack_frame():
-        frame = ThreadLocalData()
-        _SCRAPER_LOCAL.stack.append(frame)
-        try:
-            yield frame
-        finally:
-            _SCRAPER_LOCAL.stack.pop()
-
-    retry_on = (ScraperError, *retry_on)
-
-    def make_wrapper(function: Callable):
-        @wraps(function)
-        def wrapper(*args, **kwargs):
-            with scraper_stack_frame() as frame:
-                for attempt in range(num_attempts):
-                    try:
-                        if attempt > 0:
-                            frame.force_cache_stale = True
-                        payload = function(*args, **kwargs)
-                        if isinstance(payload, GeneratorType):
-                            payload = list(payload)
-                        return payload
-                    except Exception as error:  # pylint: disable=broad-except
-                        if isinstance(error, retry_on) and attempt < num_attempts - 1:
-                            delay = 5 ** attempt
-                            if frame.logger:
-                                frame.logger.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
-                            sleep(delay)
-                        else:
-                            raise
-        return wrapper
-    return make_wrapper

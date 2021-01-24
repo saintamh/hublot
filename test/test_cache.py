@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# 3rd parties
-import pytest
-
 # forban
 from forban.logs import LogEntry
 from .utils import assert_responses_equal, dummy_prequest, dummy_response
@@ -41,7 +38,6 @@ def test_cache(reinstantiable_client):
         assert log.cached is True
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_client_caching(mocker, reinstantiable_client):
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
@@ -55,7 +51,6 @@ def test_client_caching(mocker, reinstantiable_client):
         fetch.assert_not_called()
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_http_errors_are_cached(client, server):
     one = client.get(f'{server}/fail-with-random-value', raise_for_status=False)
     assert one.status_code == 500

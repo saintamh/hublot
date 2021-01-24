@@ -31,7 +31,6 @@ def test_default_method(client, server, kwargs, expected_method):
     assert client.fetch(f'{server}/method-test', **kwargs).text == expected_method
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_no_cache_by_default(server):
     client = Client()
     one = client.get(f'{server}/unique-number').text
@@ -39,7 +38,6 @@ def test_no_cache_by_default(server):
     assert one != two  # not cached
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_null_cache(server):
     client = Client(cache=None)
     one = client.get(f'{server}/unique-number').text
@@ -47,7 +45,6 @@ def test_null_cache(server):
     assert one != two  # not cached
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_cache_as_path(server):
     with TemporaryDirectory() as tmp:
         client = Client(cache=Path(tmp))
@@ -56,7 +53,6 @@ def test_cache_as_path(server):
     assert one == two  # cached
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_cache_as_cache_object(server):
     with TemporaryDirectory() as tmp:
         client = Client(cache=Cache(DiskStorage(Path(tmp))))
@@ -65,7 +61,6 @@ def test_cache_as_cache_object(server):
     assert one == two  # cached
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_force_cache_stale(client, server):
     one = client.get(f'{server}/unique-number').text
     two = client.get(f'{server}/unique-number', force_cache_stale=True).text
@@ -74,46 +69,46 @@ def test_force_cache_stale(client, server):
     assert two == three  # but cache was written on 2nd call
 
 
-def test_courtesy_sleep_by_default(mocked_sleep, server):
+def test_courtesy_sleep_by_default(mocked_courtesy_sleep, server):
     client = Client()
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
-    mocked_sleep.assert_called_once()
-    delay, = mocked_sleep.call_args[0]
+    mocked_courtesy_sleep.assert_called_once()
+    delay, = mocked_courtesy_sleep.call_args[0]
     assert delay > 1
 
 
-def test_null_courtesy_sleep(mocked_sleep, server):
+def test_null_courtesy_sleep(mocked_courtesy_sleep, server):
     client = Client(courtesy_sleep=None)
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
-    mocked_sleep.assert_not_called()
+    mocked_courtesy_sleep.assert_not_called()
 
 
-def test_courtesy_sleep_as_int(mocked_sleep, server):
+def test_courtesy_sleep_as_int(mocked_courtesy_sleep, server):
     client = Client(courtesy_sleep=78)
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
-    mocked_sleep.assert_called_once()
-    delay, = mocked_sleep.call_args[0]
+    mocked_courtesy_sleep.assert_called_once()
+    delay, = mocked_courtesy_sleep.call_args[0]
     assert delay == pytest.approx(78, 0.1)
 
 
-def test_courtesy_sleep_as_timedelta(mocked_sleep, server):
+def test_courtesy_sleep_as_timedelta(mocked_courtesy_sleep, server):
     client = Client(courtesy_sleep=timedelta(minutes=2))
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
-    mocked_sleep.assert_called_once()
-    delay, = mocked_sleep.call_args[0]
+    mocked_courtesy_sleep.assert_called_once()
+    delay, = mocked_courtesy_sleep.call_args[0]
     assert delay == pytest.approx(120, 0.1)
 
 
-def test_courtesy_sleep_as_object(mocked_sleep, server):
+def test_courtesy_sleep_as_object(mocked_courtesy_sleep, server):
     client = Client(courtesy_sleep=CourtesySleep(78))
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
-    mocked_sleep.assert_called_once()
-    delay, = mocked_sleep.call_args[0]
+    mocked_courtesy_sleep.assert_called_once()
+    delay, = mocked_courtesy_sleep.call_args[0]
     assert delay == pytest.approx(78, 0.1)
 
 
@@ -174,7 +169,6 @@ def test_no_redirect(client, server):
     assert res.text == 'Bounce 1'
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_redirect_response_bodies(cache, server):
     for _ in (1, 2):
         client = Client(cache=cache)

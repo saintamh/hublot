@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
 from .cache import Cache, CacheKey
+from .decorator import scraper
 from .exceptions import ScraperError
-from .forban import Client, CourtesySleep, scraper
+from .client import Client
+from .courtesy import CourtesySleep

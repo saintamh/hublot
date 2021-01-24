@@ -17,27 +17,27 @@ from .utils import dummy_prequest, dummy_response
     'courtesy_seconds',
     [None, 0, 5, 37],
 )
-def test_courtesy_sleep(mocked_sleep, server, courtesy_seconds):
+def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_seconds):
     kwargs = {} if courtesy_seconds is None else {'courtesy_sleep': courtesy_seconds}
     client = Client(**kwargs)
     client.fetch(f'{server}/hello')
-    mocked_sleep.assert_not_called()  # 1st request, no sleep
+    mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello')
     if courtesy_seconds == 0:
-        mocked_sleep.assert_not_called()
+        mocked_courtesy_sleep.assert_not_called()
     else:
-        mocked_sleep.assert_called_once()
-        delay, = mocked_sleep.call_args[0]
+        mocked_courtesy_sleep.assert_called_once()
+        delay, = mocked_courtesy_sleep.call_args[0]
         assert delay == pytest.approx(courtesy_seconds or 5, 0.1)
 
 
-def test_nonequal_hostnames(mocker, mocked_sleep):
+def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
     client = Client()
     mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prequest(client)))
     client.fetch('http://one/')
-    mocked_sleep.assert_not_called()
+    mocked_courtesy_sleep.assert_not_called()
     client.fetch('http://two/')
-    mocked_sleep.assert_not_called()
+    mocked_courtesy_sleep.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -54,10 +54,10 @@ def test_nonequal_hostnames(mocker, mocked_sleep):
         2,
     )
 )
-def test_equal_hostnames(mocker, mocked_sleep, url_1, url_2):
+def test_equal_hostnames(mocker, mocked_courtesy_sleep, url_1, url_2):
     client = Client()
     mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prequest(client)))
     client.fetch(url_1)
-    mocked_sleep.assert_not_called()  # 1st request, no sleep
+    mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(url_2)
-    mocked_sleep.assert_called_once()
+    mocked_courtesy_sleep.assert_called_once()

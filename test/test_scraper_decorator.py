@@ -17,7 +17,6 @@ def test_scraper_decorator_no_exception(client, server):
     assert fetch() == 'hello'
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_scraper_decorator_on_http_error(client, server, unique_key):
     @scraper
     def fetch():
@@ -25,7 +24,6 @@ def test_scraper_decorator_on_http_error(client, server, unique_key):
     assert fetch() == 'success after 2 failures'
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_scraper_decorator_on_value_error():
     counter = count()
     @scraper
@@ -37,7 +35,6 @@ def test_scraper_decorator_on_value_error():
     assert fetch() == 'Success after 3 attempts'
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_scraper_decorator_num_attempts(client, server, unique_key):
     @scraper(num_attempts=2)
     def fetch():
@@ -46,7 +43,6 @@ def test_scraper_decorator_num_attempts(client, server, unique_key):
         fetch()
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_scraper_decorator_doesnt_catch_other_exceptions():
     @scraper
     def fetch():
@@ -55,7 +51,6 @@ def test_scraper_decorator_doesnt_catch_other_exceptions():
         fetch()
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_scraper_decorator_retry_on():
     counter = count()
     @scraper(retry_on=[KeyError])

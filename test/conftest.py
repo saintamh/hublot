@@ -16,7 +16,8 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
-from forban import Cache, Client, forban
+from forban import Cache, Client
+import forban.courtesy
 
 
 @pytest.fixture
@@ -140,11 +141,23 @@ def server():
 
 
 @pytest.fixture
-def mocked_sleep(mocker):
-    mocker.patch('forban.forban.sleep')
-    return forban.sleep
+def mocked_courtesy_sleep(mocker):
+    mocker.patch('forban.courtesy.sleep')
+    return forban.courtesy.sleep
+
+
+@pytest.fixture
+def mocked_sleep_on_retry(mocker):
+    mocker.patch('forban.decorator.sleep')
 
 
 @pytest.fixture
 def unique_key():
     return ''.join(choices(ascii_letters, k=32))
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        # these are always applied, whether or not the tests want them
+        item.fixturenames.append('mocked_courtesy_sleep')
+        item.fixturenames.append('mocked_sleep_on_retry')

@@ -180,7 +180,6 @@ def test_cache_key_parsing(user_specified, expected_path, expected_unique_str):
     assert parsed.unique_str == expected_unique_str
 
 
-@pytest.mark.usefixtures('mocked_sleep')
 def test_user_specified_cache_key(client, server):
     counter = count()
     all_keys = ['one', 'two', 'three']
