@@ -10,7 +10,7 @@ import pytest
 
 # forban
 from forban import Client
-from .utils import dummy_response
+from .utils import dummy_prepared_request, dummy_response
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ def test_courtesy_sleep(mocked_sleep, server, courtesy_seconds):
 
 def test_nonequal_hostnames(mocker, mocked_sleep):
     client = Client()
-    mocker.patch.object(client.session, 'request', return_value=dummy_response())
+    mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prepared_request(client)))
     client.fetch('http://one/')
     mocked_sleep.assert_not_called()
     client.fetch('http://two/')
@@ -56,7 +56,7 @@ def test_nonequal_hostnames(mocker, mocked_sleep):
 )
 def test_equal_hostnames(mocker, mocked_sleep, url_1, url_2):
     client = Client()
-    mocker.patch.object(client.session, 'request', return_value=dummy_response())
+    mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prepared_request(client)))
     client.fetch(url_1)
     mocked_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(url_2)

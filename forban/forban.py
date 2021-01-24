@@ -2,7 +2,7 @@
 
 # standards
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import timedelta
 from functools import wraps
 import logging
@@ -10,15 +10,15 @@ from pathlib import Path
 import threading
 from time import sleep, time
 from types import GeneratorType
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
-from urllib.parse import urlparse
+from typing import Callable, Dict, Optional, Sequence, Union
+from urllib.parse import urljoin, urlparse
 
 # 3rd parties
-from requests import PreparedRequest, Request, Response, Session
+from requests import PreparedRequest, Request, Response, Session, TooManyRedirects
 from requests.cookies import MockRequest
 
 # forban
-from .cache import DiskCache
+from .cache import Cache
 from .exceptions import ScraperError
 from .logs import LogEntry
 
@@ -26,9 +26,12 @@ from .logs import LogEntry
 DEFAULT_LOGGER = logging.getLogger('forban')
 
 
+MAX_REDIRECTS = 10
+
+
 @dataclass
 class ThreadLocalData:
-    scraper_kwargs: Dict[str, Any] = field(default_factory=dict)
+    force_cache_stale: bool = False
     logger: Optional[logging.Logger] = None
 
 
@@ -67,14 +70,12 @@ class Client:
 
     def __init__(
         self,
-        cache: Optional[Union[Path, DiskCache]] = None,
+        cache: Optional[Union[Cache, Path, str]] = None,
         courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
         session: Optional[Session] = None,
         propagate_logs: bool = False,
     ):
-        if isinstance(cache, Path):
-            cache = DiskCache(cache)
-        self.cache = cache
+        self.cache = Cache.load(cache)
         if not isinstance(courtesy_sleep, CourtesySleep):
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
@@ -84,16 +85,20 @@ class Client:
     def fetch(
         self,
         url: str,
+        method: Optional[str] = None,
         courtesy_seconds: Optional[float] = None,
         raise_for_status: bool = True,
-        **kwargs,
+        force_cache_stale: bool = False,
+        allow_redirects: bool = True,
+        _redirected_from: Optional[Response] = None,
+        **request_contents,
     ) -> Response:
         frame = _SCRAPER_LOCAL.stack[-1]
-        kwargs.update(frame.scraper_kwargs)
+        if frame.force_cache_stale:
+            force_cache_stale = True
         frame.logger = self.logger
-        force_cache_stale = kwargs.pop('force_cache_stale', False)
-        prepared_req, request_kwargs = self._prepare(url, **kwargs)
-        log = LogEntry(prepared_req)
+        prepared_req = self._prepare(url=url, method=method, **request_contents)
+        log = LogEntry(prepared_req, is_redirect=(_redirected_from is not None))
         res = None
         if self.cache and not force_cache_stale:
             res = self.cache.get(prepared_req, log)
@@ -102,20 +107,47 @@ class Client:
                 self.session.cookies.extract_cookies(MockResponse(r), MockRequest(prepared_req))  # type: ignore
         else:
             with self.courtesy_sleep(prepared_req, log, courtesy_seconds):
-                res = self.session.request(**request_kwargs)
+                res = self.session.request(
+                    prepared_req.method,  # type: ignore
+                    url,
+                    allow_redirects=False,
+                    **request_contents
+                )
             if self.cache:
                 self.cache.put(prepared_req, res)
+        if _redirected_from:
+            res.history = [*_redirected_from.history, _redirected_from]
         self.logger.info('%s', log)
+        if allow_redirects and res.is_redirect:
+            if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
+                raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
+            return self.fetch(
+                urljoin(url, res.headers['Location']),
+                courtesy_seconds=0,
+                raise_for_status=raise_for_status,
+                force_cache_stale=force_cache_stale,
+                _redirected_from=res,
+            )
         if raise_for_status:
             res.raise_for_status()
         return res
 
-    def _prepare(self, url: str, **kwargs) -> Tuple[PreparedRequest, Dict]:
-        default_method = (
-            'POST' if (kwargs.get('data') is not None or kwargs.get('files') is not None or kwargs.get('json') is not None)
-            else 'GET'
-        )
-        method = kwargs.pop('method', default_method).upper()
+    def _prepare(self, url: str, method: Optional[str], **kwargs) -> PreparedRequest:
+        """
+        Given the user-supplied arguments to the `fetch`, method, compile a `PreparedRequest` object. Normally this is done within
+        Requests (and it will still be done by Requests when we call it), but we need this in order to compute the cache key.
+        """
+        if method:
+            method = method.upper()
+        else:
+            method = (
+                'POST' if (
+                    kwargs.get('data') is not None
+                    or kwargs.get('files') is not None
+                    or kwargs.get('json') is not None
+                )
+                else 'GET'
+            )
         for arg in ('data', 'files'):
             if isinstance(kwargs.get(arg), dict):
                 for key, value in list(kwargs[arg].items()):
@@ -124,19 +156,8 @@ class Client:
                     if callable(getattr(value, 'read', None)):
                         kwargs[arg][key] = value.read()
                         value.close()
-        req = Request(
-            url=url,
-            method=method,
-            headers=kwargs.get('headers'),
-            files=kwargs.get('files'),
-            data=kwargs.get('data') or {},
-            json=kwargs.get('json'),
-            params=kwargs.get('params') or {},
-            auth=kwargs.get('auth'),
-            cookies=kwargs.get('cookies'),
-        )
-        prepared_req = self.session.prepare_request(req)
-        return prepared_req, {'url': url, 'method': method, **kwargs}
+        req = Request(url=url, method=method, **kwargs)
+        return self.session.prepare_request(req)
 
     def get(self, url: str, **kwargs) -> Response:
         return self.fetch(url, method='GET', **kwargs)
@@ -202,7 +223,7 @@ def scraper(
                 for attempt in range(num_attempts):
                     try:
                         if attempt > 0:
-                            frame.scraper_kwargs['force_cache_stale'] = True
+                            frame.force_cache_stale = True
                         payload = function(*args, **kwargs)
                         if isinstance(payload, GeneratorType):
                             payload = list(payload)

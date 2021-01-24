@@ -3,47 +3,37 @@
 # standards
 from io import BytesIO
 from itertools import combinations, product
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 # 3rd parties
 from requests import PreparedRequest, Response
 from requests.structures import CaseInsensitiveDict
 
+# forban
+from forban import Client
 
-def dummy_prepared_request(
-    method: str = 'POST',
-    url: str = 'http://example.com/test',
-    params: Optional[Dict[str, str]] = None,
-    data: bytes = b'This is my request data',
-    headers: Optional[Dict[str, str]] = None,
-    cookies: Optional[Dict[str, str]] = None,
-    json: Any = None,
-):
-    prepared_req = PreparedRequest()
-    prepared_req.prepare(
-        method,
-        url,
-        headers=headers,
-        data=data,
-        params=params,
-        cookies=cookies,
-        json=json,
-    )
-    return prepared_req
+
+def dummy_prepared_request(client: Client, **kwargs):
+    kwargs.setdefault('url', 'http://example.com/test')
+    kwargs.setdefault('method', 'POST')
+    if kwargs['method'] in ('POST', 'PUT'):
+        kwargs.setdefault('data', b'This is my request data')
+    return client._prepare(**kwargs)  # pylint: disable=protected-access
 
 
 def dummy_response(
+    prepared_req: PreparedRequest,
     status_code: int = 200,
     reason: str = 'OK',
     headers: Optional[Dict[str, str]] = None,
-    url: str = 'http://example.com/example',
     data: bytes = b'This is my response data',
 ):
     res = Response()
+    res.request = prepared_req
     res.status_code = status_code
     res.reason = reason
     res.headers = CaseInsensitiveDict(headers or {})
-    res.url = url
+    res.url = prepared_req.url  # type: ignore
     res.raw = BytesIO(data)
     return res
 
@@ -64,3 +54,16 @@ def iter_equal_pairs(equivalencies):
         if len(group) > 2:
             for elem_1, elem_2 in combinations(group, 2):
                 yield elem_1, elem_2
+
+
+def assert_responses_equal(res1, res2):
+    state1 = res1.__getstate__()
+    state2 = res2.__getstate__()
+    state1['request'] = state1['request'] and state1['request'].__dict__
+    state2['request'] = state2['request'] and state2['request'].__dict__
+    try:
+        assert state1 == state2
+    except AssertionError:
+        print(state1)
+        print(state2)
+        raise

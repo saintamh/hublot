@@ -16,20 +16,7 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
-from forban import Client, DiskCache, forban
-from forban.cache import BodyStorage, HeaderStorage
-
-
-@pytest.fixture
-def header_storage():
-    with TemporaryDirectory() as temp_root:
-        yield HeaderStorage(Path(temp_root))
-
-
-@pytest.fixture
-def body_storage():
-    with TemporaryDirectory() as temp_root:
-        yield BodyStorage(Path(temp_root))
+from forban import Cache, Client, forban
 
 
 @pytest.fixture
@@ -39,7 +26,7 @@ def reinstantiable_cache():
     cache object then re-create it, with the same parameters, as happens when you re-run a script.
     """
     with TemporaryDirectory() as temp_root:
-        yield lambda: DiskCache(temp_root)
+        yield lambda: Cache.load(Path(temp_root))
 
 
 @pytest.fixture
@@ -51,9 +38,8 @@ def reinstantiable_client(reinstantiable_cache):
 
 
 @pytest.fixture
-def cache():
-    with TemporaryDirectory() as temp_root:
-        yield DiskCache(temp_root)
+def cache(reinstantiable_cache):
+    yield reinstantiable_cache()
 
 
 @pytest.fixture

@@ -7,18 +7,19 @@ from collections import OrderedDict
 import pytest
 
 # forban
-from forban.cache import CacheKey, DiskCache
+from forban.cache import CacheKey
 from forban.logs import LogEntry
-from .utils import dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
+from .utils import assert_responses_equal, dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 
-def test_simple_cache_use(cache):
-    prepared_req = dummy_prepared_request()
+def test_simple_cache_use(client):
+    prepared_req = dummy_prepared_request(client)
     log = LogEntry(prepared_req)
+    cache = client.cache
     assert cache.get(prepared_req, log) is None
     assert log.cache_key_str is not None
-    cache.put(prepared_req, dummy_response())
-    assert cache.get(prepared_req, log).__getstate__() == dummy_response().__getstate__()
+    cache.put(prepared_req, dummy_response(prepared_req))
+    assert_responses_equal(cache.get(prepared_req, log), dummy_response(prepared_req))
 
 
 EQUIVALENCIES = [
@@ -81,18 +82,18 @@ EQUIVALENCIES = [
         {'url': 'http://cache-test/data-test', 'data': {'a': '1'}},
         {
             'url': 'http://cache-test/data-test',
-            'data': 'a=1',
+            'data': b'a=1',
             'headers': {'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': '3'},
         },
     ],
 
     # Setting `json` is equivalent to manually building the request
     [
-        {'url': 'http://cache-test/data-test', 'json': {'a': '1'}},
+        {'url': 'http://cache-test/json-test', 'json': {'a': '1'}},
         {
-            'url': 'http://cache-test/data-test',
-            'data': '{"a": "1"}',
-            'headers': {'Content-Type': 'application/json', 'Content-Length': '10'},
+            'url': 'http://cache-test/json-test',
+            'data': b'{"a": "1"}',
+            'headers': {'Content-Type': 'application/json'},
         },
     ],
 ]
@@ -102,9 +103,9 @@ EQUIVALENCIES = [
     'config_1, config_2',
     iter_nonequal_pairs(EQUIVALENCIES),
 )
-def test_unique_keys(config_1, config_2):
-    key = DiskCache.compute_key(dummy_prepared_request(**config_1))
-    other_key = DiskCache.compute_key(dummy_prepared_request(**config_2))
+def test_unique_keys(client, config_1, config_2):
+    key = CacheKey.compute(dummy_prepared_request(client, **config_1))
+    other_key = CacheKey.compute(dummy_prepared_request(client, **config_2))
     assert key != other_key
 
 
@@ -112,10 +113,11 @@ def test_unique_keys(config_1, config_2):
     'config_1, config_2',
     iter_nonequal_pairs(EQUIVALENCIES),
 )
-def test_unique_requests(cache, config_1, config_2):
-    prepared_req_1 = dummy_prepared_request(**config_1)
-    prepared_req_2 = dummy_prepared_request(**config_2)
-    cache.put(prepared_req_1, dummy_response())
+def test_unique_requests(client, config_1, config_2):
+    cache = client.cache
+    prepared_req_1 = dummy_prepared_request(client, **config_1)
+    prepared_req_2 = dummy_prepared_request(client, **config_2)
+    cache.put(prepared_req_1, dummy_response(prepared_req_1))
     assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None
 
 
@@ -123,9 +125,9 @@ def test_unique_requests(cache, config_1, config_2):
     'config_1, config_2',
     iter_equal_pairs(EQUIVALENCIES),
 )
-def test_equivalent_keys(config_1, config_2):
-    key_1 = DiskCache.compute_key(dummy_prepared_request(**config_1))
-    key_2 = DiskCache.compute_key(dummy_prepared_request(**config_2))
+def test_equivalent_keys(client, config_1, config_2):
+    key_1 = CacheKey.compute(dummy_prepared_request(client, **config_1))
+    key_2 = CacheKey.compute(dummy_prepared_request(client, **config_2))
     assert key_1 == key_2, (config_1, config_2)
 
 
@@ -133,24 +135,29 @@ def test_equivalent_keys(config_1, config_2):
     'config_1, config_2',
     iter_equal_pairs(EQUIVALENCIES),
 )
-def test_equivalent_requests(cache, config_1, config_2):
-    prepared_req_1 = dummy_prepared_request(**config_1)
-    prepared_req_2 = dummy_prepared_request(**config_2)
-    response = dummy_response()
+def test_equivalent_requests(client, config_1, config_2):
+    cache = client.cache
+    prepared_req_1 = dummy_prepared_request(client, **config_1)
+    prepared_req_2 = dummy_prepared_request(client, **config_2)
+    response = dummy_response(prepared_req_1)
     assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None  # else test is invalid
     cache.put(prepared_req_1, response)
-    assert cache.get(prepared_req_2, LogEntry(prepared_req_2)).__getstate__() == response.__getstate__()
+    assert_responses_equal(
+        cache.get(prepared_req_2, LogEntry(prepared_req_2)),
+        response,
+    )
 
 
-def test_cache_updates_log_entry_attributes(cache):
-    prepared_req = dummy_prepared_request()
+def test_cache_updates_log_entry_attributes(client):
+    cache = client.cache
+    prepared_req = dummy_prepared_request(client)
     log = LogEntry(prepared_req)
     assert log.cache_key_str is None
     assert log.cached is None
     cache.get(prepared_req, log)
     assert log.cache_key_str is not None
     assert log.cached is False
-    cache.put(prepared_req, dummy_response())
+    cache.put(prepared_req, dummy_response(prepared_req))
     cache.get(prepared_req, log)
     assert log.cached is True
 
@@ -160,7 +167,8 @@ def test_cache_updates_log_entry_attributes(cache):
     [
         ('simple-string', '/simple-string', 'simple-string'),
         ('space string', '/space%20string', 'space%20string'),
-        ('/slash/string', '/%2Fslash%2Fstring', '%2Fslash%2Fstring'),
+        ('slash/string', '/slash/string', 'slash/string'),
+        ('/slash/string', '/slash/string', 'slash/string'),
         (('item', '123'), '/item/123', 'item/123'),
         (('slash', '/'), '/slash/%2F', 'slash/%2F'),
     ]

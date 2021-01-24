@@ -11,6 +11,7 @@ from requests import PreparedRequest
 @dataclass(frozen=False)
 class LogEntry:
     prepared_req: PreparedRequest
+    is_redirect: bool = False
     cache_key_str: Optional[str] = None
     cached: Optional[bool] = None
     courtesy_seconds: Optional[float] = None
@@ -25,6 +26,8 @@ class LogEntry:
             yield f'[{seconds:^6s}] '
         else:
             yield '         '
+        if self.is_redirect:
+            yield ' -> '
         pr = self.prepared_req
         yield pr.url
         if pr.method != 'GET':
