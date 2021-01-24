@@ -102,8 +102,7 @@ class Client:
         if frame.force_cache_stale:
             force_cache_stale = True
         frame.logger = self.logger
-        request_contents.setdefault('headers', CaseInsensitiveDict()).setdefault('User-Agent', self.user_agent)
-        preq = self._prepare(url=url, method=method, **request_contents)
+        preq = self._prepare(url, method, request_contents)
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
         if self.cache and not force_cache_stale:
@@ -138,7 +137,7 @@ class Client:
             res.raise_for_status()
         return res
 
-    def _prepare(self, url: str, method: Optional[str], **kwargs) -> PreparedRequest:
+    def _prepare(self, url: str, method: Optional[str], request_contents) -> PreparedRequest:
         """
         Given the user-supplied arguments to the `fetch`, method, compile a `PreparedRequest` object. Normally this is done within
         Requests (and it will still be done by Requests when we call it), but we need this in order to compute the cache key.
@@ -148,21 +147,22 @@ class Client:
         else:
             method = (
                 'POST' if (
-                    kwargs.get('data') is not None
-                    or kwargs.get('files') is not None
-                    or kwargs.get('json') is not None
+                    request_contents.get('data') is not None
+                    or request_contents.get('files') is not None
+                    or request_contents.get('json') is not None
                 )
                 else 'GET'
             )
         for arg in ('data', 'files'):
-            if isinstance(kwargs.get(arg), dict):
-                for key, value in list(kwargs[arg].items()):
+            if isinstance(request_contents.get(arg), dict):
+                for key, value in list(request_contents[arg].items()):
                     # Read the files to memory. This is required because this request ends up being prepared twice, once by us and
                     # once by Requests. This is what requests.models.PreparedRequest.prepare_body does anyway
                     if callable(getattr(value, 'read', None)):
-                        kwargs[arg][key] = value.read()
+                        request_contents[arg][key] = value.read()
                         value.close()
-        req = Request(url=url, method=method, **kwargs)
+        request_contents.setdefault('headers', CaseInsensitiveDict()).setdefault('User-Agent', self.user_agent)
+        req = Request(url=url, method=method, **request_contents)
         return self.session.prepare_request(req)
 
     def get(self, url: str, **kwargs) -> Response:

@@ -14,11 +14,11 @@ from forban import Client
 
 
 def dummy_prequest(client: Client, **kwargs):
-    kwargs.setdefault('url', 'http://example.com/test')
-    kwargs.setdefault('method', 'POST')
-    if kwargs['method'] in ('POST', 'PUT'):
+    url = kwargs.pop('url', 'http://example.com/test')
+    method = kwargs.pop('method', 'POST')
+    if method in ('POST', 'PUT'):
         kwargs.setdefault('data', b'This is my request data')
-    return client._prepare(**kwargs)  # pylint: disable=protected-access
+    return client._prepare(url, method, kwargs)  # pylint: disable=protected-access
 
 
 def dummy_response(
