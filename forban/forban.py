@@ -19,7 +19,7 @@ from requests.cookies import MockRequest
 from requests.structures import CaseInsensitiveDict
 
 # forban
-from .cache import Cache
+from .cache import Cache, UserSpecifiedCacheKey
 from .exceptions import ScraperError
 from .logs import LogEntry
 from .version import FORBAN_VERSION
@@ -94,6 +94,7 @@ class Client:
         raise_for_status: bool = True,
         force_cache_stale: bool = False,
         allow_redirects: bool = True,
+        cache_key: Optional[UserSpecifiedCacheKey] = None,
         _redirected_from: Optional[Response] = None,
         **request_contents,
     ) -> Response:
@@ -106,7 +107,7 @@ class Client:
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
         if self.cache and not force_cache_stale:
-            res = self.cache.get(preq, log)
+            res = self.cache.get(preq, log, cache_key)
         if res is not None:
             for r in res.history + [res]:
                 self.session.cookies.extract_cookies(MockResponse(r), MockRequest(preq))  # type: ignore
@@ -119,7 +120,7 @@ class Client:
                     **request_contents
                 )
             if self.cache:
-                self.cache.put(preq, res)
+                self.cache.put(preq, res, cache_key)
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
         self.logger.info('%s', log)

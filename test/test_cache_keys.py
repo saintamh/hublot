@@ -2,6 +2,7 @@
 
 # standards
 from collections import OrderedDict
+from itertools import count
 
 # 3rd parties
 import pytest
@@ -177,3 +178,26 @@ def test_cache_key_parsing(user_specified, expected_path, expected_unique_str):
     parsed = CacheKey.parse(user_specified)
     assert ''.join(f'/{p}' for p in parsed.path_parts) == expected_path
     assert parsed.unique_str == expected_unique_str
+
+
+@pytest.mark.usefixtures('mocked_sleep')
+def test_user_specified_cache_key(client, server):
+    counter = count()
+    all_keys = ['one', 'two', 'three']
+    all_values = [
+        client.get(
+            f'{server}/unique-number',
+            cache_key=key,
+            params={'random': str(next(counter))}
+        ).text
+        for key in all_keys
+    ]
+    assert len(set(all_values)) == len(all_values)  # they're all different
+    for key, expected in zip(all_keys, all_values):
+        obtained = client.get(
+            f'{server}/unique-number',
+            cache_key=key,
+            # the URL is actually different, but the cache key isn't, so we should get the same value back
+            params={'random': str(next(counter))}
+        ).text
+        assert obtained == expected
