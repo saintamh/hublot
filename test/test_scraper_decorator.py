@@ -31,8 +31,8 @@ def test_scraper_decorator_on_value_error():
         i = next(counter)
         if i < 3:
             raise ValueError('x')
-        return f'Success after {i} attempts'
-    assert fetch() == 'Success after 3 attempts'
+        return f'Success on attempt {i}'
+    assert fetch() == 'Success on attempt 3'
 
 
 def test_scraper_decorator_num_attempts(client, server, unique_key):
@@ -58,8 +58,8 @@ def test_scraper_decorator_retry_on():
         i = next(counter)
         if i < 3:
             raise KeyError('x')
-        return f'Success after {i} attempts'
-    assert fetch() == 'Success after 3 attempts'
+        return f'Success on attempt {i}'
+    assert fetch() == 'Success on attempt 3'
 
 
 def test_if_scraper_returns_generator_it_gets_consumed():
@@ -76,3 +76,23 @@ def test_if_scraper_returns_iterator_it_gets_consumed():
     def fetch():
         return (i for i in range(1, 4))
     assert fetch() == [1, 2, 3]
+
+
+def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
+    """
+    The first sleep must be >= 0 seconds, and then they must all be > than the previous
+    """
+    counter = count()
+    @scraper
+    def fetch():
+        i = next(counter)
+        if i < 4:
+            raise ValueError('x')
+        return f'Success on attempt {i}'
+    assert fetch() == 'Success on attempt 4'
+    assert mocked_sleep_on_retry.call_count == 4
+    previous_sleep = -1
+    for attempt in range(4):
+        sleep, = mocked_sleep_on_retry.call_args_list[attempt].args
+        assert sleep > previous_sleep
+        previous_sleep = sleep

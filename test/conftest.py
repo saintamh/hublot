@@ -18,6 +18,7 @@ from werkzeug.serving import make_server  # installed transitively by Flask
 # forban
 from forban import Cache, Client
 import forban.courtesy
+import forban.decorator
 
 
 @pytest.fixture
@@ -149,6 +150,7 @@ def mocked_courtesy_sleep(mocker):
 @pytest.fixture
 def mocked_sleep_on_retry(mocker):
     mocker.patch('forban.decorator.sleep')
+    return forban.decorator.sleep
 
 
 @pytest.fixture
