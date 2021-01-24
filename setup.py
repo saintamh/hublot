@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-# they're both standards, pylint: disable=wrong-import-order
+# they're all standards, pylint: disable=wrong-import-order
 import setuptools
 import sys
+
+# forban
+from forban.version import FORBAN_VERSION
 
 
 install_requires = [
@@ -14,7 +17,7 @@ if sys.version_info < (3, 7):
 
 setuptools.setup(
     name='forban',
-    version='1.0',
+    version=FORBAN_VERSION,
     author='Hervé Saint-Amand',
     packages=setuptools.find_packages(),
     install_requires=install_requires,

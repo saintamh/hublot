@@ -16,11 +16,13 @@ from urllib.parse import urljoin, urlparse
 # 3rd parties
 from requests import PreparedRequest, Request, Response, Session, TooManyRedirects
 from requests.cookies import MockRequest
+from requests.structures import CaseInsensitiveDict
 
 # forban
 from .cache import Cache
 from .exceptions import ScraperError
 from .logs import LogEntry
+from .version import FORBAN_VERSION
 
 
 DEFAULT_LOGGER = logging.getLogger('forban')
@@ -74,6 +76,7 @@ class Client:
         courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
         session: Optional[Session] = None,
         propagate_logs: bool = False,
+        user_agent: str = f'forban/{FORBAN_VERSION}'
     ):
         self.cache = Cache.load(cache)
         if not isinstance(courtesy_sleep, CourtesySleep):
@@ -81,6 +84,7 @@ class Client:
         self.courtesy_sleep = courtesy_sleep
         self.session = session or Session()
         self.logger = self._init_logger(propagate_logs)
+        self.user_agent = user_agent
 
     def fetch(
         self,
@@ -97,6 +101,7 @@ class Client:
         if frame.force_cache_stale:
             force_cache_stale = True
         frame.logger = self.logger
+        request_contents.setdefault('headers', CaseInsensitiveDict()).setdefault('User-Agent', self.user_agent)
         preq = self._prepare(url=url, method=method, **request_contents)
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None

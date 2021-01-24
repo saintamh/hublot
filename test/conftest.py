@@ -74,6 +74,7 @@ def flask_app():
             },
             'form': request.form,
             'json': request.json,
+            'headers': dict(request.headers.items()),
         })
 
     @app.route('/fail-with-random-value')
