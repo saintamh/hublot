@@ -20,17 +20,17 @@ class Cache:
 
     def get(
         self,
-        prepared_req: PreparedRequest,
+        preq: PreparedRequest,
         log: LogEntry,
         key: Optional[UserSpecifiedCacheKey] = None,
     ) -> Optional[Response]:
         """
         Looks up the given `PreparedRequest`, and returns the corresponding `Response` if it was in cache, or `None` otherwise.
         """
-        key = CacheKey.parse(key) if key else CacheKey.compute(prepared_req)
+        key = CacheKey.parse(key) if key else CacheKey.compute(preq)
         res = self.storage.read(key)
         if res is not None:
-            res.request = prepared_req  # the storage doesn't need to store and recreate the request
+            res.request = preq  # the storage doesn't need to store and recreate the request
             log.cached = True
         else:
             res = None
@@ -40,11 +40,11 @@ class Cache:
 
     def put(
         self,
-        prepared_req: PreparedRequest,
+        preq: PreparedRequest,
         res: Response,
         key: Optional[UserSpecifiedCacheKey] = None,
     ) -> None:
-        key = CacheKey.parse(key) if key else CacheKey.compute(prepared_req)
+        key = CacheKey.parse(key) if key else CacheKey.compute(preq)
         self.storage.write(key, res)
 
     @classmethod

@@ -9,17 +9,17 @@ import pytest
 # forban
 from forban.cache import CacheKey
 from forban.logs import LogEntry
-from .utils import assert_responses_equal, dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
+from .utils import assert_responses_equal, dummy_prequest, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 
 def test_simple_cache_use(client):
-    prepared_req = dummy_prepared_request(client)
-    log = LogEntry(prepared_req)
+    preq = dummy_prequest(client)
+    log = LogEntry(preq)
     cache = client.cache
-    assert cache.get(prepared_req, log) is None
+    assert cache.get(preq, log) is None
     assert log.cache_key_str is not None
-    cache.put(prepared_req, dummy_response(prepared_req))
-    assert_responses_equal(cache.get(prepared_req, log), dummy_response(prepared_req))
+    cache.put(preq, dummy_response(preq))
+    assert_responses_equal(cache.get(preq, log), dummy_response(preq))
 
 
 EQUIVALENCIES = [
@@ -104,8 +104,8 @@ EQUIVALENCIES = [
     iter_nonequal_pairs(EQUIVALENCIES),
 )
 def test_unique_keys(client, config_1, config_2):
-    key = CacheKey.compute(dummy_prepared_request(client, **config_1))
-    other_key = CacheKey.compute(dummy_prepared_request(client, **config_2))
+    key = CacheKey.compute(dummy_prequest(client, **config_1))
+    other_key = CacheKey.compute(dummy_prequest(client, **config_2))
     assert key != other_key
 
 
@@ -115,10 +115,10 @@ def test_unique_keys(client, config_1, config_2):
 )
 def test_unique_requests(client, config_1, config_2):
     cache = client.cache
-    prepared_req_1 = dummy_prepared_request(client, **config_1)
-    prepared_req_2 = dummy_prepared_request(client, **config_2)
-    cache.put(prepared_req_1, dummy_response(prepared_req_1))
-    assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None
+    preq_1 = dummy_prequest(client, **config_1)
+    preq_2 = dummy_prequest(client, **config_2)
+    cache.put(preq_1, dummy_response(preq_1))
+    assert cache.get(preq_2, LogEntry(preq_2)) is None
 
 
 @pytest.mark.parametrize(
@@ -126,8 +126,8 @@ def test_unique_requests(client, config_1, config_2):
     iter_equal_pairs(EQUIVALENCIES),
 )
 def test_equivalent_keys(client, config_1, config_2):
-    key_1 = CacheKey.compute(dummy_prepared_request(client, **config_1))
-    key_2 = CacheKey.compute(dummy_prepared_request(client, **config_2))
+    key_1 = CacheKey.compute(dummy_prequest(client, **config_1))
+    key_2 = CacheKey.compute(dummy_prequest(client, **config_2))
     assert key_1 == key_2, (config_1, config_2)
 
 
@@ -137,28 +137,28 @@ def test_equivalent_keys(client, config_1, config_2):
 )
 def test_equivalent_requests(client, config_1, config_2):
     cache = client.cache
-    prepared_req_1 = dummy_prepared_request(client, **config_1)
-    prepared_req_2 = dummy_prepared_request(client, **config_2)
-    response = dummy_response(prepared_req_1)
-    assert cache.get(prepared_req_2, LogEntry(prepared_req_2)) is None  # else test is invalid
-    cache.put(prepared_req_1, response)
+    preq_1 = dummy_prequest(client, **config_1)
+    preq_2 = dummy_prequest(client, **config_2)
+    response = dummy_response(preq_1)
+    assert cache.get(preq_2, LogEntry(preq_2)) is None  # else test is invalid
+    cache.put(preq_1, response)
     assert_responses_equal(
-        cache.get(prepared_req_2, LogEntry(prepared_req_2)),
+        cache.get(preq_2, LogEntry(preq_2)),
         response,
     )
 
 
 def test_cache_updates_log_entry_attributes(client):
     cache = client.cache
-    prepared_req = dummy_prepared_request(client)
-    log = LogEntry(prepared_req)
+    preq = dummy_prequest(client)
+    log = LogEntry(preq)
     assert log.cache_key_str is None
     assert log.cached is None
-    cache.get(prepared_req, log)
+    cache.get(preq, log)
     assert log.cache_key_str is not None
     assert log.cached is False
-    cache.put(prepared_req, dummy_response(prepared_req))
-    cache.get(prepared_req, log)
+    cache.put(preq, dummy_response(preq))
+    cache.get(preq, log)
     assert log.cached is True
 
 

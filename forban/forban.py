@@ -50,10 +50,10 @@ class CourtesySleep:
         self.last_request_per_host: Dict[str, float] = {}
 
     @contextmanager
-    def __call__(self, prepared_req: PreparedRequest, log: LogEntry, courtesy_seconds: Optional[float] = None):
+    def __call__(self, preq: PreparedRequest, log: LogEntry, courtesy_seconds: Optional[float] = None):
         if courtesy_seconds is None:
             courtesy_seconds = self.courtesy_seconds
-        host = str(urlparse(prepared_req.url).hostname)
+        host = str(urlparse(preq.url).hostname)
         last_request = self.last_request_per_host.get(host, 0)
         delay = (last_request + courtesy_seconds) - time()
         if delay > 0:
@@ -97,24 +97,24 @@ class Client:
         if frame.force_cache_stale:
             force_cache_stale = True
         frame.logger = self.logger
-        prepared_req = self._prepare(url=url, method=method, **request_contents)
-        log = LogEntry(prepared_req, is_redirect=(_redirected_from is not None))
+        preq = self._prepare(url=url, method=method, **request_contents)
+        log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
         if self.cache and not force_cache_stale:
-            res = self.cache.get(prepared_req, log)
+            res = self.cache.get(preq, log)
         if res is not None:
             for r in res.history + [res]:
-                self.session.cookies.extract_cookies(MockResponse(r), MockRequest(prepared_req))  # type: ignore
+                self.session.cookies.extract_cookies(MockResponse(r), MockRequest(preq))  # type: ignore
         else:
-            with self.courtesy_sleep(prepared_req, log, courtesy_seconds):
+            with self.courtesy_sleep(preq, log, courtesy_seconds):
                 res = self.session.request(
-                    prepared_req.method,  # type: ignore
+                    preq.method,  # type: ignore
                     url,
                     allow_redirects=False,
                     **request_contents
                 )
             if self.cache:
-                self.cache.put(prepared_req, res)
+                self.cache.put(preq, res)
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
         self.logger.info('%s', log)

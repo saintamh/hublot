@@ -13,7 +13,7 @@ from requests.structures import CaseInsensitiveDict
 from forban import Client
 
 
-def dummy_prepared_request(client: Client, **kwargs):
+def dummy_prequest(client: Client, **kwargs):
     kwargs.setdefault('url', 'http://example.com/test')
     kwargs.setdefault('method', 'POST')
     if kwargs['method'] in ('POST', 'PUT'):
@@ -22,18 +22,18 @@ def dummy_prepared_request(client: Client, **kwargs):
 
 
 def dummy_response(
-    prepared_req: PreparedRequest,
+    preq: PreparedRequest,
     status_code: int = 200,
     reason: str = 'OK',
     headers: Optional[Dict[str, str]] = None,
     data: bytes = b'This is my response data',
 ):
     res = Response()
-    res.request = prepared_req
+    res.request = preq
     res.status_code = status_code
     res.reason = reason
     res.headers = CaseInsensitiveDict(headers or {})
-    res.url = prepared_req.url  # type: ignore
+    res.url = preq.url  # type: ignore
     res.raw = BytesIO(data)
     return res
 

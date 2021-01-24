@@ -39,25 +39,25 @@ def compose_binary_blob(res: Response) -> bytes:
 
 
 def _compose_request_blob(
-    prepared_req: PreparedRequest,
+    preq: PreparedRequest,
     output: BytesIO,
     write: Callable[[str], None],
 ) -> None:
 
-    write(f'{prepared_req.method} {prepared_req.url}{EOL}')
-    for key, value in sorted(prepared_req.headers.items()):
+    write(f'{preq.method} {preq.url}{EOL}')
+    for key, value in sorted(preq.headers.items()):
         write(f'{key}: {value}{EOL}')
     write(EOL)
-    content_length = int(prepared_req.headers.get('Content-Length') or 0)
-    if prepared_req.body is not None:
-        if content_length != len(prepared_req.body):
+    content_length = int(preq.headers.get('Content-Length') or 0)
+    if preq.body is not None:
+        if content_length != len(preq.body):
             # Don't write it out because we won't be able to read it back
-            raise Exception(f'body has {len(prepared_req.body)} bytes but Content-Length is {content_length}')
-        if isinstance(prepared_req.body, str):
+            raise Exception(f'body has {len(preq.body)} bytes but Content-Length is {content_length}')
+        if isinstance(preq.body, str):
             # `PreparedRequest.prepare_body` leaves `body` as a `str` if `data` was a dict
-            body_bytes = prepared_req.body.encode('UTF-8')
+            body_bytes = preq.body.encode('UTF-8')
         else:
-            body_bytes = prepared_req.body
+            body_bytes = preq.body
         output.write(body_bytes)
         write(EOL)
     else:

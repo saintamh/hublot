@@ -32,20 +32,20 @@ class CacheKey:
         return '/'.join(self.path_parts)
 
     @classmethod
-    def compute(cls, prepared_req: PreparedRequest) -> 'CacheKey':
+    def compute(cls, preq: PreparedRequest) -> 'CacheKey':
         # NB we don't normalise the order of the `params` dict or `data` dict. If running in Python 3.6+, where dicts preserve
         # their insertion order, multiple calls from the same code, where the params are defined in the same order, will hit the
         # same cache key. In previous versions, maybe not, so in 3.5 and before params and body should be serialised before being
         # sent to Forban.
         headers = sorted(
             (key.title(), value)
-            for key, value in prepared_req.headers.items()
+            for key, value in preq.headers.items()
         )
         key = (
-            prepared_req.method,
-            prepared_req.url,
+            preq.method,
+            preq.url,
             headers,
-            prepared_req.body,
+            preq.body,
         )
         # Shortening to 16 chars means it's easier to copy-paste, takes less space in the terminal, etc. Seems like a flimsy reason
         # for increasing the chances of a collision, but at 2^64 bits these chances are still comfortably negligible.
