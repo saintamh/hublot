@@ -13,7 +13,7 @@ from requests.cookies import MockRequest
 from requests.structures import CaseInsensitiveDict
 
 # forban
-from .cache import Cache, UserSpecifiedCacheKey
+from .cache import Cache, CacheKey, UserSpecifiedCacheKey
 from .courtesy import CourtesySleep
 from .decorator import SCRAPER_LOCAL
 from .logs import LogEntry
@@ -89,6 +89,7 @@ class Client:
                 courtesy_seconds=0,
                 raise_for_status=raise_for_status,
                 force_cache_stale=force_cache_stale,
+                cache_key=cache_key and CacheKey.parse(cache_key).next_in_sequence(),
                 _redirected_from=res,
             )
         if raise_for_status:

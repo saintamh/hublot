@@ -93,6 +93,8 @@ def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
     assert mocked_sleep_on_retry.call_count == 4
     previous_sleep = -1
     for attempt in range(4):
-        sleep, = mocked_sleep_on_retry.call_args_list[attempt].args
+        called_args = mocked_sleep_on_retry.call_args_list[attempt][0]
+        assert len(called_args) == 1, called_args
+        sleep, = called_args
         assert sleep > previous_sleep
         previous_sleep = sleep

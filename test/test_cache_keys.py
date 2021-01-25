@@ -163,21 +163,33 @@ def test_cache_updates_log_entry_attributes(client):
     assert log.cached is True
 
 
+TEST_KEYS = [
+    ('simple-string', '/simple-string', 'simple-string'),
+    ('space string', '/space%20string', 'space%20string'),
+    ('slash/string', '/slash/string', 'slash/string'),
+    ('/slash/string', '/slash/string', 'slash/string'),
+    (('item', '123'), '/item/123', 'item/123'),
+    (('slash', '/'), '/slash/%2F', 'slash/%2F'),
+]
+
+
 @pytest.mark.parametrize(
     'user_specified, expected_path, expected_unique_str',
-    [
-        ('simple-string', '/simple-string', 'simple-string'),
-        ('space string', '/space%20string', 'space%20string'),
-        ('slash/string', '/slash/string', 'slash/string'),
-        ('/slash/string', '/slash/string', 'slash/string'),
-        (('item', '123'), '/item/123', 'item/123'),
-        (('slash', '/'), '/slash/%2F', 'slash/%2F'),
-    ]
+    TEST_KEYS
 )
 def test_cache_key_parsing(user_specified, expected_path, expected_unique_str):
     parsed = CacheKey.parse(user_specified)
     assert ''.join(f'/{p}' for p in parsed.path_parts) == expected_path
     assert parsed.unique_str == expected_unique_str
+
+
+@pytest.mark.parametrize(
+    'user_specified',
+    [spec[0] for spec in TEST_KEYS]
+)
+def test_cache_key_parsing_from_path_parts(user_specified):
+    parsed = CacheKey.parse(user_specified)
+    assert CacheKey.from_path_parts(parsed.path_parts) == parsed
 
 
 def test_user_specified_cache_key(client, server):
@@ -200,3 +212,13 @@ def test_user_specified_cache_key(client, server):
             params={'random': str(next(counter))}
         ).text
         assert obtained == expected
+
+
+def test_user_specified_cache_key_on_redirect(client, server):
+    res = client.get(
+        f'{server}/redirect/chain/1',
+        cache_key='fixed',
+    )
+    assert res.text == 'Landed'
+    all_keys_in_cache = sorted(k.unique_str for k in client.cache.storage.iter_all_keys())
+    assert all_keys_in_cache == ['fixed', 'fixed.1', 'fixed.2']

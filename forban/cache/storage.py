@@ -3,7 +3,8 @@
 # standards
 import gzip
 from pathlib import Path
-from typing import Optional
+import re
+from typing import Iterable, Optional
 
 # 3rd parties
 from requests import Response
@@ -19,6 +20,9 @@ class Storage:
         raise NotImplementedError
 
     def write(self, key: CacheKey, response: Response) -> None:
+        raise NotImplementedError
+
+    def iter_all_keys(self) -> Iterable[CacheKey]:
         raise NotImplementedError
 
 
@@ -39,6 +43,12 @@ class DiskStorage(Storage):
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with gzip.open(file_path, 'wb') as file_out:
             file_out.write(compose_binary_blob(response))
+
+    def iter_all_keys(self) -> Iterable[CacheKey]:
+        for file_path in self.root_path.glob('**/*.gz'):
+            parts = list(file_path.relative_to(self.root_path).parts)
+            parts[-1] = re.sub(r'\.gz$', '', file_path.name)
+            yield CacheKey.from_path_parts(parts)
 
     def _file_path(self, key: CacheKey) -> Path:
         file_path = self.root_path / Path(*key.path_parts)
