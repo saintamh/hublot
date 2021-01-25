@@ -28,6 +28,11 @@ dummy-variables-rgx=_$|\w+_unused
 # Maximum number of characters on a single line.
 max-line-length=132
 
+# pylint-quotes plugin config
+string-quote=single-avoid-escape
+triple-quote=single
+docstring-quote=double
+
 
 [DESIGN]
 

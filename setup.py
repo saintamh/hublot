@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 # they're all standards, pylint: disable=wrong-import-order
+from pathlib import Path
+import re
 import setuptools
 import sys
-
-# forban
-from forban.version import FORBAN_VERSION
 
 
 install_requires = [
@@ -13,6 +12,16 @@ install_requires = [
 ]
 if sys.version_info < (3, 7):
     install_requires.append('dataclasses>=0.8,<1')
+
+
+version_file = Path(__file__).parent / 'forban' / 'version.py'
+version_match = re.search(
+    r"FORBAN_VERSION = \'(.+)\'",
+    version_file.read_text('UTF-8'),
+)
+if not version_match:
+    raise Exception("Couldn't parse version.py")
+FORBAN_VERSION = version_match.group(1)
 
 
 setuptools.setup(
