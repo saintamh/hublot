@@ -19,6 +19,13 @@ def test_user_agent_constructor_arg(server):
     assert user_agent == 'Nyanya/10.8'
 
 
+def test_user_agent_instance_attribute(server):
+    client = Client()
+    client.user_agent='Dwidwi/0.9'
+    user_agent = client.get(f'{server}/echo').json()['headers']['User-Agent']
+    assert user_agent == 'Dwidwi/0.9'
+
+
 def test_user_agent_in_headers(server):
     client = Client()
     res = client.get(
