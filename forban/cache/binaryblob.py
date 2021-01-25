@@ -19,10 +19,7 @@ from requests import PreparedRequest, Response
 from requests.structures import CaseInsensitiveDict
 
 
-
-# HTTP uses \r\n, and since our flat files look like HTTP transfers it would've made sense to use that here, but it doesn't
-# really matter, and Emacs renders the \r's as ^M if there's a single lone \n in the body, so I prefer this
-EOL = '\n'
+EOL = '\r\n'
 EOL_BYTES = EOL.encode('UTF-8')
 EOL_LEN = len(EOL)
 
