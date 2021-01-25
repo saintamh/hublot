@@ -34,9 +34,10 @@ class Client:
         courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
         session: Optional[Session] = None,
         propagate_logs: bool = False,
+        max_cache_age: Optional[timedelta] = None,
         user_agent: str = f'forban/{FORBAN_VERSION}'
     ):
-        self.cache = Cache.load(cache)
+        self.cache = Cache.load(cache, max_cache_age)
         if not isinstance(courtesy_sleep, CourtesySleep):
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
@@ -53,6 +54,7 @@ class Client:
         force_cache_stale: bool = False,
         allow_redirects: bool = True,
         cache_key: Optional[UserSpecifiedCacheKey] = None,
+        max_cache_age: Optional[timedelta] = None,
         _redirected_from: Optional[Response] = None,
         **request_contents,
     ) -> Response:
@@ -64,7 +66,7 @@ class Client:
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
         if self.cache and not force_cache_stale:
-            res = self.cache.get(preq, log, cache_key)
+            res = self.cache.get(preq, log, cache_key, max_cache_age)
         if res is not None:
             for r in res.history + [res]:
                 self.session.cookies.extract_cookies(MockResponse(r), MockRequest(preq))  # type: ignore

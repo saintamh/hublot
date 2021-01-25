@@ -28,7 +28,7 @@ def reinstantiable_cache():
     cache object then re-create it, with the same parameters, as happens when you re-run a script.
     """
     with TemporaryDirectory() as temp_root:
-        yield lambda: Cache.load(Path(temp_root))
+        yield lambda **kwargs: Cache.load(Path(temp_root), **kwargs)
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def reinstantiable_client(reinstantiable_cache):
     """
     A callable that can be called repeatedly to reinstantiate a Client with the same cache parameters.
     """
-    yield lambda: Client(cache=reinstantiable_cache())
+    yield lambda **kwargs: Client(cache=reinstantiable_cache(**kwargs))
 
 
 @pytest.fixture

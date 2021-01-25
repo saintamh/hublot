@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # standards
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Union
 
@@ -15,20 +16,30 @@ from .storage import DiskStorage, Storage
 
 class Cache:
 
-    def __init__(self, storage: Storage):
+    def __init__(self, storage: Storage, max_age: Optional[timedelta] = None):
         self.storage = storage
+        self.max_age = max_age
+        self.needs_pruned = (max_age is not None)
 
     def get(
         self,
         preq: PreparedRequest,
         log: LogEntry,
         key: Optional[UserSpecifiedCacheKey] = None,
+        max_age: Optional[timedelta] = None,
     ) -> Optional[Response]:
         """
         Looks up the given `PreparedRequest`, and returns the corresponding `Response` if it was in cache, or `None` otherwise.
         """
         key = CacheKey.parse(key) if key else CacheKey.compute(preq)
-        res = self.storage.read(key)
+        if self.needs_pruned and self.max_age is not None:
+            self.storage.prune(self.max_age)
+            self.needs_pruned = False
+        if max_age is None or (self.max_age is not None and max_age > self.max_age):
+            # The `max_age` passed to the method can't be greater than that given to the constructor, that would be inconsistent
+            # with the cache pruning that happens and which is always based on the constructor-given `self.max_age`
+            max_age = self.max_age
+        res = self.storage.read(key, max_age)
         if res is not None:
             res.request = preq  # the storage doesn't need to store and recreate the request
             log.cached = True
@@ -48,14 +59,23 @@ class Cache:
         self.storage.write(key, res)
 
     @classmethod
-    def load(cls, cache: Optional[Union['Cache', Path, str]] = None) -> Optional['Cache']:
+    def load(
+        cls,
+        cache: Optional[Union['Cache', Path, str]] = None,
+        max_age: Optional[timedelta] = None,
+    ) -> Optional['Cache']:
         """
         Takes the `cache` param given to the `Client` constructor, and returns a `Cache` instance, or `None`
         """
         if cache is None or isinstance(cache, Cache):
+            if max_age is not None:
+                raise Exception("You can't specify a max_age if passing in an already instantiated `Cache`")
             return cache
         elif isinstance(cache, Path):
-            return cls(storage=DiskStorage(root_path=cache))
+            return cls(
+                storage=DiskStorage(root_path=cache),
+                max_age=max_age,
+            )
         elif isinstance(cache, str) and cache.startswith('s3://'):
             raise NotImplementedError  # some day
         else:
