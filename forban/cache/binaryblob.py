@@ -70,7 +70,8 @@ def _compose_response_blob(
 ) -> None:
 
     write(f'HTTP {res.status_code} {res.reason}{EOL}')
-    for key, value in sorted(res.headers.items()):
+    # Using `res.raw._fp.headers` rather than `res.headers` means we store repeated headers (e.g. Set-Cookie) as separate lines
+    for key, value in sorted(res.raw._fp.headers.items()):  # pylint: disable=protected-access
         write(f'{key}: {value}{EOL}')
     write(EOL)
     if res.content is not None:
@@ -98,7 +99,7 @@ def _parse_message(
     read_to_end: bool = False,
 ) -> Tuple[CaseInsensitiveDict, Optional[bytes], int]:
 
-    headers: CaseInsensitiveDict = CaseInsensitiveDict()
+    headers = MultipleCaseInsensitiveDict()
     while data[pos : pos+EOL_LEN] != EOL_BYTES:
         key, value, pos = _parse_line(data, pos, r'^([^:]+): (.+)$')
         headers[key] = value
@@ -121,3 +122,24 @@ def _parse_line(data: bytes, pos: int, regex: str):
     if not match:
         raise ValueError(repr(line))
     return (*match.groups(), eol_pos + EOL_LEN)
+
+
+
+class MultipleCaseInsensitiveDict(CaseInsensitiveDict):  # pylint: disable=too-many-ancestors
+
+    def __setitem__(self, key, item):
+        values = self.get_all(key, [])
+        values.append(item)
+        super().__setitem__(key, values)
+
+    def __getitem__(self, key):
+        values = super().__getitem__(key)
+        return ', '.join(values)
+
+    def get_all(self, key, failobj=None):
+        # Deliverately copying the interface of `email.message.EmailMessage.get_all` for consistency's sake, though we're not
+        # actually using this object in place of that.
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            return failobj

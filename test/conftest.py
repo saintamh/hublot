@@ -103,6 +103,10 @@ def flask_app():
             res.set_cookie(key, value)
         return res
 
+    @app.route('/cookies/set-two-cookies')
+    def set_two_cookies():
+        return str(next(iter_numbers)), 200, {'Set-Cookie': ['a=1', 'b=2']}
+
     @app.route('/redirect/chain/1')
     def redirect_chain_1():
         res = make_response('Bounce 1', 302)

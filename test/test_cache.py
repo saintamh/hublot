@@ -60,3 +60,18 @@ def test_http_errors_are_cached(client, server):
     assert three.status_code == 500
     assert one.text == two.text
     assert two.text != three.text
+
+
+def test_repeated_http_headers_are_cached(reinstantiable_client, server):
+    client = reinstantiable_client()
+    res = client.get(f'{server}/cookies/set-two-cookies')
+    assert res.headers.get('Set-Cookie') == 'a=1, b=2'
+    assert res.raw._fp.headers.get_all('Set-Cookie') == ['a=1', 'b=2']   # pylint: disable=protected-access
+    unique = res.text
+
+    client = reinstantiable_client()
+    res = client.get(f'{server}/cookies/set-two-cookies')
+    assert res.text == unique  # check that it was cached
+    assert res.headers.get('Set-Cookie') == 'a=1, b=2'
+    #if callable(getattr(res.headers, 'get_all', None)):
+    assert res.headers.get_all('Set-Cookie') == ['a=1', 'b=2']
