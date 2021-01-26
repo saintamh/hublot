@@ -41,14 +41,14 @@ def test_cache(reinstantiable_client):
 def test_client_caching(mocker, reinstantiable_client):
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
-        fetch = mocker.patch.object(client.session, 'request', return_value=res)
-        assert_responses_equal(client.fetch(**req), res)
-        fetch.assert_called_once()
+        request = mocker.patch.object(client.session, 'request', return_value=res)
+        assert_responses_equal(client.request(**req), res)
+        request.assert_called_once()
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
-        fetch = mocker.patch.object(client.session, 'request', return_value=res)
-        assert_responses_equal(client.fetch(**req), res)
-        fetch.assert_not_called()
+        request = mocker.patch.object(client.session, 'request', return_value=res)
+        assert_responses_equal(client.request(**req), res)
+        request.assert_not_called()
 
 
 def test_http_errors_are_cached(client, server):

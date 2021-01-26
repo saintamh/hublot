@@ -45,7 +45,7 @@ class Client:
         self.logger = self._init_logger(propagate_logs)
         self.user_agent = user_agent
 
-    def fetch(
+    def request(
         self,
         url: str,
         method: Optional[str] = None,
@@ -86,7 +86,7 @@ class Client:
         if allow_redirects and res.is_redirect:
             if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
                 raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
-            return self.fetch(
+            return self.request(
                 urljoin(url, res.headers['Location']),
                 courtesy_seconds=0,
                 raise_for_status=raise_for_status,
@@ -100,8 +100,9 @@ class Client:
 
     def _prepare(self, url: str, method: Optional[str], request_contents) -> PreparedRequest:
         """
-        Given the user-supplied arguments to the `fetch`, method, compile a `PreparedRequest` object. Normally this is done within
-        Requests (and it will still be done by Requests when we call it), but we need this in order to compute the cache key.
+        Given the user-supplied arguments to the `request`, method, compile a `PreparedRequest` object. Normally this is done
+        within Requests (and it will still be done by Requests when we call it), but we need this in order to compute the cache
+        key.
         """
         if method:
             method = method.upper()
@@ -127,10 +128,10 @@ class Client:
         return self.session.prepare_request(req)
 
     def get(self, url: str, **kwargs) -> Response:
-        return self.fetch(url, method='GET', **kwargs)
+        return self.request(url, method='GET', **kwargs)
 
     def post(self, url: str, data=None, **kwargs) -> Response:
-        return self.fetch(url, method='POST', data=data, **kwargs)
+        return self.request(url, method='POST', data=data, **kwargs)
 
     @staticmethod
     def _init_logger(propagate: bool):
