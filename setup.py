@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-# they're all standards, pylint: disable=wrong-import-order
+# standards
 from pathlib import Path
 import re
-import setuptools
 import sys
+
+# 3rd parties
+import setuptools
 
 
 install_requires = [

@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 import logging
-from time import sleep
 import threading
+from time import sleep
 from types import GeneratorType
 from typing import Callable, Optional, Sequence
 

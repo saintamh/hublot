@@ -9,10 +9,15 @@ repos:
     language: python
     types: [python]
 
-- repo: local
-  hooks:
   - id: mypy
     name: mypy
     entry: mypy
     language: python
     types: [python]
+
+  - id: isort
+    name: isort
+    entry: isort
+    language: python
+    types: [python]
+    args: [-m, VERTICAL_HANGING_INDENT, --line-width=132, --fss, --ignore-whitespace, --trailing-comma, --check-only]
