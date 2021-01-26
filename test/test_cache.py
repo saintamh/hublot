@@ -75,3 +75,5 @@ def test_repeated_http_headers_are_cached(reinstantiable_client, server):
     assert res.headers.get('Set-Cookie') == 'a=1, b=2'
     #if callable(getattr(res.headers, 'get_all', None)):
     assert res.headers.get_all('Set-Cookie') == ['a=1', 'b=2']
+
+    assert [f'{c.name}={c.value!r}' for c in client.session.cookies] == ["a='1'", "b='2'"]

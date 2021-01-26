@@ -157,6 +157,12 @@ class MockResponse:
         # there are no such named headers in the message, failobj is returned''
         #
         # See https://docs.python.org/3.8/library/email.message.html#email.message.EmailMessage.get_all
-        if name in self.response.headers:
-            return [self.response.headers[name]]
+        if callable(getattr(self.response.headers, 'get_all', None)):
+            # It must be that `headers` is a `MultipleCaseInsensitiveDict` that we created when loading from cache. It gives us the
+            # un-joined cookies, use that
+            return self.response.headers.get_all(name, failobj)
+        else:
+            # Fall back to reading from the ', '-joined string.
+            if name in self.response.headers:
+                return [self.response.headers[name]]
         return failobj
