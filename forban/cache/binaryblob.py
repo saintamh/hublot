@@ -70,8 +70,14 @@ def _compose_response_blob(
 ) -> None:
 
     write(f'HTTP {res.status_code} {res.reason}{EOL}')
-    # Using `res.raw._fp.headers` rather than `res.headers` means we store repeated headers (e.g. Set-Cookie) as separate lines
-    for key, value in sorted(res.raw._fp.headers.items()):  # pylint: disable=protected-access
+    if hasattr(res.raw, '_fp'):
+        # Using `res.raw._fp.headers` rather than `res.headers` means we store repeated headers (e.g. Set-Cookie) as separate lines
+        header_items = res.raw._fp.headers.items()  # pylint: disable=protected-access
+    else:
+        # Sometimes however, in tests especially, `raw` might've been replaced by some other file object, and has no `_fp`, so fall
+        # back to this:
+        header_items = res.headers.items()
+    for key, value in sorted(header_items):
         write(f'{key}: {value}{EOL}')
     write(EOL)
     if res.content is not None:
