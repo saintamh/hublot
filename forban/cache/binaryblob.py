@@ -56,7 +56,7 @@ def _compose_request_blob(
         else:
             body_bytes = preq.body
         output.write(body_bytes)
-        write(EOL)
+        write(EOL + EOL)
     else:
         if content_length > 0:
             # Again, need to make sure Content-Length can reliably be used for parsing later
@@ -117,7 +117,7 @@ def _parse_message(
     elif headers.get('Content-Length'):
         length = int(headers['Content-Length'])
         body = data[pos : pos+length]
-        pos += length + EOL_LEN
+        pos += length + (2 * EOL_LEN)
     return headers, body, pos
 
 
