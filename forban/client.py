@@ -17,6 +17,7 @@ from .cache import Cache, CacheKey, UserSpecifiedCacheKey
 from .courtesy import CourtesySleep
 from .decorator import SCRAPER_LOCAL
 from .logs import LogEntry
+from .utils import ForbanCookiePolicy
 from .version import FORBAN_VERSION
 
 
@@ -35,13 +36,15 @@ class Client:
         session: Optional[Session] = None,
         propagate_logs: bool = False,
         max_cache_age: Optional[timedelta] = None,
-        user_agent: str = f'forban/{FORBAN_VERSION}'
+        user_agent: str = f'forban/{FORBAN_VERSION}',
+        cookies_enabled: bool = True,
     ):
         self.cache = Cache.load(cache, max_cache_age)
         if not isinstance(courtesy_sleep, CourtesySleep):
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
         self.session = session or Session()
+        self.session.cookies.set_policy(ForbanCookiePolicy(cookies_enabled))
         self.logger = self._init_logger(propagate_logs)
         self.user_agent = user_agent
 
