@@ -107,7 +107,7 @@ def _parse_message(
 
     headers = MultipleCaseInsensitiveDict()
     while data[pos : pos+EOL_LEN] != EOL_BYTES:
-        key, value, pos = _parse_line(data, pos, r'^([^:]+): (.+)$')
+        key, value, pos = _parse_line(data, pos, r'^([^:]+): (.*)$')
         headers[key] = value
     pos += EOL_LEN
     body: Optional[bytes] = None
