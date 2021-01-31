@@ -118,7 +118,7 @@ def test_unique_requests(client, config_1, config_2):
     cache = client.cache
     preq_1 = dummy_prequest(client, **config_1)
     preq_2 = dummy_prequest(client, **config_2)
-    cache.put(preq_1, LogEntry(), dummy_response(preq_1))
+    cache.put(preq_1, LogEntry(preq_1), dummy_response(preq_1))
     assert cache.get(preq_2, LogEntry(preq_2)) is None
 
 
@@ -142,7 +142,7 @@ def test_equivalent_requests(client, config_1, config_2):
     preq_2 = dummy_prequest(client, **config_2)
     response = dummy_response(preq_1)
     assert cache.get(preq_2, LogEntry(preq_2)) is None  # else test is invalid
-    cache.put(preq_1, LogEntry(), response)
+    cache.put(preq_1, LogEntry(preq_1), response)
     assert_responses_equal(
         cache.get(preq_2, LogEntry(preq_2)),
         response,

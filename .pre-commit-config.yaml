@@ -21,3 +21,10 @@ repos:
     language: python
     types: [python]
     args: [-m, VERTICAL_HANGING_INDENT, --line-width=132, --fss, --ignore-whitespace, --trailing-comma, --check-only]
+
+  - id: pytest
+    name: pytest
+    entry: pytest
+    language: python
+    types: [python]
+    args: [test]
