@@ -2,10 +2,14 @@
 
 # standards
 from dataclasses import dataclass
-from typing import Optional
+import logging
+from typing import Optional, Union
 
 # 3rd parties
 from requests import PreparedRequest
+
+
+LOGGER = logging.getLogger('forban')
 
 
 @dataclass(frozen=False)
@@ -42,3 +46,21 @@ class LogEntry:
 
     def __str__(self):
         return ''.join(self._compose_line())
+
+
+def basic_logging_config(level: Union[int, str] = 'INFO', propagate: bool = False):
+    """
+    Sets up logging for the common use case. Calls `logging.basicConfig`, lowers verbosity for the `urllib3` logger. If `propagate`
+    is False (the default), a new handler will be attached to `forban.LOGGER` that logs in a simple format to stderr, and does not
+    propagate log events to the root logger.
+    """
+    if not isinstance(level, int):
+        level = getattr(logging, level)
+    logging.basicConfig(level=level)
+    logging.getLogger('urllib3').setLevel(max(logging.WARNING, level))
+    if not propagate and not LOGGER.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(message)s', None, '%')
+        handler.setFormatter(formatter)
+        LOGGER.addHandler(handler)
+        LOGGER.propagate = False

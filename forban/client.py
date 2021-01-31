@@ -2,7 +2,6 @@
 
 # standards
 from datetime import timedelta
-import logging
 from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import urljoin
@@ -16,12 +15,9 @@ from requests.structures import CaseInsensitiveDict
 from .cache import Cache, CacheKey, UserSpecifiedCacheKey
 from .courtesy import CourtesySleep
 from .decorator import SCRAPER_LOCAL
-from .logs import LogEntry
+from .logs import LOGGER, LogEntry
 from .utils import ForbanCookiePolicy
 from .version import FORBAN_VERSION
-
-
-DEFAULT_LOGGER = logging.getLogger('forban')
 
 
 MAX_REDIRECTS = 10
@@ -34,7 +30,6 @@ class Client:
         cache: Optional[Union[Cache, Path, str]] = None,
         courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
         session: Optional[Session] = None,
-        propagate_logs: bool = False,
         max_cache_age: Optional[timedelta] = None,
         user_agent: str = f'forban/{FORBAN_VERSION}',
         cookies_enabled: bool = True,
@@ -45,7 +40,6 @@ class Client:
         self.courtesy_sleep = courtesy_sleep
         self.session = session or Session()
         self.session.cookies.set_policy(ForbanCookiePolicy(cookies_enabled))
-        self.logger = self._init_logger(propagate_logs)
         self.user_agent = user_agent
 
     def request(
@@ -64,7 +58,6 @@ class Client:
         frame = SCRAPER_LOCAL.stack[-1]
         if frame.force_cache_stale:
             force_cache_stale = True
-        frame.logger = self.logger
         preq = self._prepare(url, method, request_contents)
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
@@ -85,7 +78,7 @@ class Client:
                 self.cache.put(preq, res, cache_key)
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
-        self.logger.info('%s', log)
+        LOGGER.info('%s', log)
         if allow_redirects and res.is_redirect:
             if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
                 raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
@@ -135,17 +128,6 @@ class Client:
 
     def post(self, url: str, data=None, **kwargs) -> Response:
         return self.request(url, method='POST', data=data, **kwargs)
-
-    @staticmethod
-    def _init_logger(propagate: bool):
-        logger = logging.getLogger('forban')
-        if not propagate:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(message)s', None, '%')
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-            logger.propagate = False
-        return logger
 
 
 class MockResponse:

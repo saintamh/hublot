@@ -3,7 +3,9 @@
 # It's the pytest way, pylint: disable=redefined-outer-name
 
 # standards
+from io import StringIO
 from itertools import count
+import logging
 from pathlib import Path
 from random import choices, random, randrange
 from string import ascii_letters
@@ -16,9 +18,12 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # forban
-from forban import Cache, Client
+from forban import Cache, Client, basic_logging_config, logger
 import forban.courtesy
 import forban.decorator
+
+
+basic_logging_config(level='DEBUG')
 
 
 @pytest.fixture
@@ -160,6 +165,22 @@ def mocked_sleep_on_retry(mocker):
 @pytest.fixture
 def unique_key():
     return ''.join(choices(ascii_letters, k=32))
+
+
+@pytest.fixture
+def captured_logs():
+    handler = logging.StreamHandler(StringIO())
+    original_handlers = logger.handlers
+    logger.handlers = [handler]
+
+    def getvalue():
+        value = handler.stream.getvalue()
+        handler.stream = StringIO()
+        logging.debug('Captured logs: %r', value)
+        return value
+    yield getvalue
+
+    logger.handlers = original_handlers
 
 
 def pytest_collection_modifyitems(items):
