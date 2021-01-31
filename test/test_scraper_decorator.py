@@ -98,3 +98,14 @@ def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
         sleep, = called_args
         assert sleep > previous_sleep
         previous_sleep = sleep
+
+
+def test_no_courtesy_sleep_on_retries(mocked_courtesy_sleep, client, server):
+    client.get(f'{server}/hello')
+    @scraper
+    def fetch():
+        return client.get(f'{server}/fail-twice-then-succeed/no-courtesy-sleep-on-retries').text
+    fetch()
+    sleeps = [call[0][0] for call in mocked_courtesy_sleep.call_args_list]
+    # we should've slept on the 1st call b/c we'd just called the server, then no sleep on subsequent calls
+    assert sleeps == [pytest.approx(5, 0.1)]
