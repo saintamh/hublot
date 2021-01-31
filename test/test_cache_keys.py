@@ -19,7 +19,7 @@ def test_simple_cache_use(client):
     cache = client.cache
     assert cache.get(preq, log) is None
     assert log.cache_key_str is not None
-    cache.put(preq, dummy_response(preq))
+    cache.put(preq, log, dummy_response(preq))
     assert_responses_equal(cache.get(preq, log), dummy_response(preq))
 
 
@@ -118,7 +118,7 @@ def test_unique_requests(client, config_1, config_2):
     cache = client.cache
     preq_1 = dummy_prequest(client, **config_1)
     preq_2 = dummy_prequest(client, **config_2)
-    cache.put(preq_1, dummy_response(preq_1))
+    cache.put(preq_1, LogEntry(), dummy_response(preq_1))
     assert cache.get(preq_2, LogEntry(preq_2)) is None
 
 
@@ -142,7 +142,7 @@ def test_equivalent_requests(client, config_1, config_2):
     preq_2 = dummy_prequest(client, **config_2)
     response = dummy_response(preq_1)
     assert cache.get(preq_2, LogEntry(preq_2)) is None  # else test is invalid
-    cache.put(preq_1, response)
+    cache.put(preq_1, LogEntry(), response)
     assert_responses_equal(
         cache.get(preq_2, LogEntry(preq_2)),
         response,
@@ -158,7 +158,7 @@ def test_cache_updates_log_entry_attributes(client):
     cache.get(preq, log)
     assert log.cache_key_str is not None
     assert log.cached is False
-    cache.put(preq, dummy_response(preq))
+    cache.put(preq, log, dummy_response(preq))
     cache.get(preq, log)
     assert log.cached is True
 

@@ -31,7 +31,7 @@ class LogEntry:
         else:
             yield '         '
         if self.is_redirect:
-            yield ' -> '
+            yield '-> '
         pr = self.preq
         yield pr.url
         if pr.method != 'GET':

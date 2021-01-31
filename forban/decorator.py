@@ -4,7 +4,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
-import logging
 import threading
 from time import sleep
 from types import GeneratorType
@@ -12,12 +11,12 @@ from typing import Callable, Optional, Sequence
 
 # forban
 from .exceptions import ScraperError
+from .logs import LOGGER
 
 
 @dataclass
 class ThreadLocalData:
-    force_cache_stale: bool = False
-    logger: Optional[logging.Logger] = None
+    is_retry: bool = False
 
 
 SCRAPER_LOCAL = threading.local()
@@ -52,7 +51,7 @@ def scraper(
                 for attempt in range(num_attempts):
                     try:
                         if attempt > 0:
-                            frame.force_cache_stale = True
+                            frame.is_retry = True
                         payload = function(*args, **kwargs)
                         if isinstance(payload, GeneratorType):
                             payload = list(payload)
@@ -60,8 +59,7 @@ def scraper(
                     except Exception as error:  # pylint: disable=broad-except
                         if isinstance(error, retry_on) and attempt < num_attempts - 1:
                             delay = 5 ** attempt
-                            if frame.logger:
-                                frame.logger.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
+                            LOGGER.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
                             sleep(delay)
                         else:
                             raise

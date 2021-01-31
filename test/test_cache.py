@@ -30,8 +30,8 @@ def test_cache(reinstantiable_client):
     for (preq, _res_unused), log in zip(pairs, log_entries):
         assert cache.get(preq, log) is None  # else test is invalid
         assert log.cached is False
-    for preq, res in pairs:
-        cache.put(preq, res)
+    for (preq, res), log in zip(pairs, log_entries):
+        cache.put(preq, log, res)
     cache = reinstantiable_client().cache
     for (preq, res), log in zip(pairs, log_entries):
         assert_responses_equal(cache.get(preq, log), res)

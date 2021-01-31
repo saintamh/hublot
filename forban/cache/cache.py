@@ -52,10 +52,12 @@ class Cache:
     def put(
         self,
         preq: PreparedRequest,
+        log: LogEntry,
         res: Response,
         key: Optional[UserSpecifiedCacheKey] = None,
     ) -> None:
         key = CacheKey.parse(key) if key else CacheKey.compute(preq)
+        log.cache_key_str = key.unique_str
         self.storage.write(key, res)
 
     @classmethod

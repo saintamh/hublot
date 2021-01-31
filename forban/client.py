@@ -56,8 +56,9 @@ class Client:
         **request_contents,
     ) -> Response:
         frame = SCRAPER_LOCAL.stack[-1]
-        if frame.force_cache_stale:
+        if frame.is_retry:
             force_cache_stale = True
+            courtesy_seconds = 0
         preq = self._prepare(url, method, request_contents)
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
@@ -75,7 +76,7 @@ class Client:
                     **request_contents
                 )
             if self.cache:
-                self.cache.put(preq, res, cache_key)
+                self.cache.put(preq, log, res, cache_key)
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
         LOGGER.info('%s', log)
