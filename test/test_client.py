@@ -121,6 +121,19 @@ def test_post_data(client, server):
 
 def test_post_open_file(client, server):
     dummy_file = Path(__file__)
+    res = client.post(f'{server}/echo', data=dummy_file.open('rb'))
+    payload = res.json()
+    payload.pop('headers')
+    assert payload == {
+        'args': {},
+        'files': {},
+        'form': dummy_file.read_text('UTF-8'),
+        'json': None,
+    }
+
+
+def test_post_open_file_as_form_field(client, server):
+    dummy_file = Path(__file__)
     res = client.post(f'{server}/echo', data={'a': dummy_file.open('rb')})
     payload = res.json()
     payload.pop('headers')

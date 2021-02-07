@@ -79,7 +79,7 @@ def flask_app():
                 key: storage.read().decode('UTF-8')
                 for key, storage in request.files.items()
             },
-            'form': request.form,
+            'form': request.data.decode('UTF-8') if request.data and not request.json else request.form,
             'json': request.json,
             'headers': dict(request.headers.items()),
         })

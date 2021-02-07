@@ -3,13 +3,12 @@
 # standards
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import urljoin
 
 # 3rd parties
 from requests import PreparedRequest, Request, Response, Session, TooManyRedirects
 from requests.cookies import MockRequest
-from requests.structures import CaseInsensitiveDict
 
 # forban
 from .cache import Cache, CacheKey, UserSpecifiedCacheKey
@@ -21,6 +20,11 @@ from .version import FORBAN_VERSION
 
 
 MAX_REDIRECTS = 10
+
+
+# Type annotation for values that can be passed to the `request` method
+#
+Requestable = Union[str, Request]
 
 
 class Client:
@@ -48,8 +52,7 @@ class Client:
 
     def fetch(
         self,
-        url: str,
-        method: Optional[str] = None,
+        url: Requestable,
         courtesy_seconds: Optional[float] = None,
         raise_for_status: bool = True,
         force_cache_stale: bool = False,
@@ -57,13 +60,19 @@ class Client:
         cache_key: Optional[UserSpecifiedCacheKey] = None,
         max_cache_age: Optional[timedelta] = None,
         _redirected_from: Optional[Response] = None,
-        **request_contents,
+        **kwargs,
     ) -> Response:
+        """
+        NB the first parameter is called `url`, even though it could also be a `Request` object, simply because that's shorter and
+        nicer than `requestable`. Hey, `urllib.request.urlopen` does the same thing, so.
+        """
         frame = SCRAPER_LOCAL.stack[-1]
         if frame.is_retry:
             force_cache_stale = True
             courtesy_seconds = 0
-        preq = self._prepare(url, method, request_contents)
+        req = self._build_request(url, **kwargs)
+        preq = self._prepare(req)
+        assert preq.url and preq.method  # shut up type linter
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = None
         if self.cache and not force_cache_stale:
@@ -74,10 +83,8 @@ class Client:
         else:
             with self.courtesy_sleep(preq, log, courtesy_seconds):
                 res = self.session.request(
-                    preq.method,  # type: ignore
-                    url,
                     allow_redirects=False,
-                    **request_contents
+                    **req.__dict__,
                 )
             if self.cache:
                 self.cache.put(preq, log, res, cache_key)
@@ -88,7 +95,7 @@ class Client:
             if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
                 raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
             return self.fetch(
-                urljoin(url, res.headers['Location']),
+                urljoin(preq.url, res.headers['Location']),
                 courtesy_seconds=0,
                 raise_for_status=raise_for_status,
                 force_cache_stale=force_cache_stale,
@@ -99,39 +106,58 @@ class Client:
             res.raise_for_status()
         return res
 
-    def _prepare(self, url: str, method: Optional[str], request_contents) -> PreparedRequest:
+    @staticmethod
+    def _build_request(url: Requestable, **kwargs) -> Request:
+        if isinstance(url, Request):
+            if kwargs:
+                # I'm putting this here to avoid unforeseen behaviour, but if it ever becomes a problem, could consider relaxing
+                # this constraint.
+                kwargs_str = ', '.join(sorted(map(repr, kwargs)))
+                raise TypeError(f"If passing a Request object to `fetch`, can't specify kwargs: {kwargs_str}")
+            return url
+        else:
+            method = kwargs.pop(
+                'method',
+                'POST' if (
+                    kwargs.get('data') is not None
+                    or kwargs.get('files') is not None
+                    or kwargs.get('json') is not None
+                )
+                else 'GET'
+            ).upper()
+            return Request(method, url, **kwargs)
+
+    def _prepare(self, req: Request) -> PreparedRequest:
         """
         Given the user-supplied arguments to the `request`, method, compile a `PreparedRequest` object. Normally this is done
         within Requests (and it will still be done by Requests when we call it), but we need this in order to compute the cache
         key.
+
+        NB this modifies the given `params` dict to remove the 'method', if any.
         """
-        if method:
-            method = method.upper()
-        else:
-            method = (
-                'POST' if (
-                    request_contents.get('data') is not None
-                    or request_contents.get('files') is not None
-                    or request_contents.get('json') is not None
-                )
-                else 'GET'
-            )
-        for arg in ('data', 'files'):
-            if isinstance(request_contents.get(arg), dict):
-                for key, value in list(request_contents[arg].items()):
-                    # Read the files to memory. This is required because this request ends up being prepared twice, once by us and
-                    # once by Requests. This is what requests.models.PreparedRequest.prepare_body does anyway
-                    if callable(getattr(value, 'read', None)):
-                        request_contents[arg][key] = value.read()
-                        value.close()
-        request_contents.setdefault('headers', CaseInsensitiveDict()).setdefault('User-Agent', self.user_agent)
-        req = Request(url=url, method=method, **request_contents)
+        req.data = self._read_files_to_memory(req.data)
+        req.files = self._read_files_to_memory(req.files)
+        req.headers.setdefault('User-Agent', self.user_agent)
         return self.session.prepare_request(req)
+
+    def _read_files_to_memory(self, obj: Any) -> Any:
+        """
+        If `data` or `files` are open file objects, read their contents to memory. We need to see their data in order to include the
+        request body in the cache key.
+        """
+        if callable(getattr(obj, 'read', None)):
+            body = obj.read()
+            obj.close()
+            return body
+        elif isinstance(obj, dict):
+            return {key: self._read_files_to_memory(value) for key, value in obj.items()}
+        else:
+            return obj
 
     ### for a thin layer of Requests compatility
 
     def request(self, method: str, url: str, **kwargs) -> Response:
-        return self.fetch(url, method, **kwargs)
+        return self.fetch(url, method=method, **kwargs)
 
     def get(self, url: str, **kwargs) -> Response:
         return self.fetch(url, method='GET', **kwargs)
