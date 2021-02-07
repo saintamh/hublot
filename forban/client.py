@@ -42,7 +42,11 @@ class Client:
         self.session.cookies.set_policy(ForbanCookiePolicy(cookies_enabled))
         self.user_agent = user_agent
 
-    def request(
+    @property
+    def cookies(self):
+        return self.session.cookies
+
+    def fetch(
         self,
         url: str,
         method: Optional[str] = None,
@@ -83,7 +87,7 @@ class Client:
         if allow_redirects and res.is_redirect:
             if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
                 raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
-            return self.request(
+            return self.fetch(
                 urljoin(url, res.headers['Location']),
                 courtesy_seconds=0,
                 raise_for_status=raise_for_status,
@@ -124,11 +128,16 @@ class Client:
         req = Request(url=url, method=method, **request_contents)
         return self.session.prepare_request(req)
 
+    ### for a thin layer of Requests compatility
+
+    def request(self, method: str, url: str, **kwargs) -> Response:
+        return self.fetch(url, method, **kwargs)
+
     def get(self, url: str, **kwargs) -> Response:
-        return self.request(url, method='GET', **kwargs)
+        return self.fetch(url, method='GET', **kwargs)
 
     def post(self, url: str, data=None, **kwargs) -> Response:
-        return self.request(url, method='POST', data=data, **kwargs)
+        return self.fetch(url, method='POST', data=data, **kwargs)
 
 
 class MockResponse:

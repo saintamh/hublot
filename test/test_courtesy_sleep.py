@@ -20,9 +20,9 @@ from .utils import dummy_prequest, dummy_response
 def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_seconds):
     kwargs = {} if courtesy_seconds is None else {'courtesy_sleep': courtesy_seconds}
     client = Client(**kwargs)
-    client.request(f'{server}/hello')
+    client.fetch(f'{server}/hello')
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
-    client.request(f'{server}/hello')
+    client.fetch(f'{server}/hello')
     if courtesy_seconds == 0:
         mocked_courtesy_sleep.assert_not_called()
     else:
@@ -34,9 +34,9 @@ def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_seconds):
 def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
     client = Client()
     mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prequest(client)))
-    client.request('http://one/')
+    client.fetch('http://one/')
     mocked_courtesy_sleep.assert_not_called()
-    client.request('http://two/')
+    client.fetch('http://two/')
     mocked_courtesy_sleep.assert_not_called()
 
 
@@ -57,7 +57,7 @@ def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
 def test_equal_hostnames(mocker, mocked_courtesy_sleep, url_1, url_2):
     client = Client()
     mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prequest(client)))
-    client.request(url_1)
+    client.fetch(url_1)
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
-    client.request(url_2)
+    client.fetch(url_2)
     mocked_courtesy_sleep.assert_called_once()

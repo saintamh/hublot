@@ -28,7 +28,7 @@ from forban.cache.storage import DiskStorage
     ]
 )
 def test_default_method(client, server, kwargs, expected_method):
-    assert client.request(f'{server}/method-test', **kwargs).text == expected_method
+    assert client.fetch(f'{server}/method-test', **kwargs).text == expected_method
 
 
 def test_no_cache_by_default(server):
