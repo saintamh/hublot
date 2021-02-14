@@ -4,7 +4,7 @@
 import re
 
 # forban
-from forban import scraper
+from forban import retry_on_scraper_error
 
 
 def test_basic_logging(client, server, captured_logs):
@@ -33,20 +33,20 @@ def test_logging_redirects(client, server, captured_logs):
     )
 
 
-def test_logging_on_retry(client, server, captured_logs):
-    @scraper
+def test_logging_on_retry(client, server, unique_key, captured_logs):
+    @retry_on_scraper_error
     def scrape():
-        client.get(f'{server}/fail-twice-then-succeed/test_logging_on_retry')
+        client.get(f'{server}/fail-twice-then-succeed/{unique_key}')
         return 'ok'
 
     scrape()
     assert re.search(
         r'^'
-        fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/test_logging_on_retry\n'
+        fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/{unique_key}\n'
         'HTTPError: 500 .+ sleeping 1s\n'
-        fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/test_logging_on_retry\n'
+        fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/{unique_key}\n'
         'HTTPError: 500 .+ sleeping 5s\n'
-        fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/test_logging_on_retry\n'
+        fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/{unique_key}\n'
         r'$',
         captured_logs(),
     )

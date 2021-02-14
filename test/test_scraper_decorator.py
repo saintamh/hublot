@@ -7,18 +7,18 @@ from itertools import count
 import pytest
 
 # forban
-from forban import ScraperError, scraper
+from forban import ScraperError, retry_on_scraper_error
 
 
 def test_scraper_decorator_no_exception(client, server):
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         return client.get(f'{server}/hello').text
     assert fetch() == 'hello'
 
 
 def test_scraper_decorator_on_http_error(client, server, unique_key):
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
     assert fetch() == 'success after 2 failures'
@@ -26,7 +26,7 @@ def test_scraper_decorator_on_http_error(client, server, unique_key):
 
 def test_scraper_decorator_on_value_error():
     counter = count()
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         i = next(counter)
         if i < 3:
@@ -36,7 +36,7 @@ def test_scraper_decorator_on_value_error():
 
 
 def test_scraper_decorator_num_attempts(client, server, unique_key):
-    @scraper(num_attempts=2)
+    @retry_on_scraper_error(num_attempts=2)
     def fetch():
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
     with pytest.raises(ScraperError):
@@ -44,16 +44,16 @@ def test_scraper_decorator_num_attempts(client, server, unique_key):
 
 
 def test_scraper_decorator_doesnt_catch_other_exceptions():
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         raise KeyError('x')
     with pytest.raises(KeyError):
         fetch()
 
 
-def test_scraper_decorator_retry_on():
+def test_scraper_decorator_error_types():
     counter = count()
-    @scraper(retry_on=[KeyError])
+    @retry_on_scraper_error(error_types=[KeyError])
     def fetch():
         i = next(counter)
         if i < 3:
@@ -63,7 +63,7 @@ def test_scraper_decorator_retry_on():
 
 
 def test_if_scraper_returns_generator_it_gets_consumed():
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         yield 1
         yield 2
@@ -72,7 +72,7 @@ def test_if_scraper_returns_generator_it_gets_consumed():
 
 
 def test_if_scraper_returns_iterator_it_gets_consumed():
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         return (i for i in range(1, 4))
     assert fetch() == [1, 2, 3]
@@ -83,7 +83,7 @@ def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
     The first sleep must be >= 0 seconds, and then they must all be > than the previous
     """
     counter = count()
-    @scraper
+    @retry_on_scraper_error
     def fetch():
         i = next(counter)
         if i < 4:
@@ -100,11 +100,11 @@ def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
         previous_sleep = sleep
 
 
-def test_no_courtesy_sleep_on_retries(mocked_courtesy_sleep, client, server):
+def test_no_courtesy_sleep_on_retries(mocked_courtesy_sleep, client, server, unique_key):
     client.get(f'{server}/hello')
-    @scraper
+    @retry_on_scraper_error
     def fetch():
-        return client.get(f'{server}/fail-twice-then-succeed/no-courtesy-sleep-on-retries').text
+        return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
     fetch()
     sleeps = [call[0][0] for call in mocked_courtesy_sleep.call_args_list]
     # we should've slept on the 1st call b/c we'd just called the server, then no sleep on subsequent calls
