@@ -25,9 +25,9 @@ class LogEntry:
             yield f'[{self.cache_key_str}] '
         if self.cached:
             yield '[cached] '
-        elif (self.courtesy_seconds or 0) > 0.5:
-            seconds = f'{round(self.courtesy_seconds)}s'
-            yield f'[{seconds:^6s}] '
+        elif self.courtesy_seconds and self.courtesy_seconds > 0.5:
+            rounded = f'{round(self.courtesy_seconds)}s'
+            yield f'[{rounded:^6s}] '
         else:
             yield '         '
         if self.is_redirect:

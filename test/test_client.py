@@ -85,15 +85,6 @@ def test_null_courtesy_sleep(mocked_courtesy_sleep, server):
     mocked_courtesy_sleep.assert_not_called()
 
 
-def test_courtesy_sleep_as_int(mocked_courtesy_sleep, server):
-    client = Client(courtesy_sleep=78)
-    client.get(f'{server}/unique-number')
-    client.get(f'{server}/unique-number')
-    mocked_courtesy_sleep.assert_called_once()
-    delay, = mocked_courtesy_sleep.call_args[0]
-    assert delay == pytest.approx(78, 0.1)
-
-
 def test_courtesy_sleep_as_timedelta(mocked_courtesy_sleep, server):
     client = Client(courtesy_sleep=timedelta(minutes=2))
     client.get(f'{server}/unique-number')
@@ -104,7 +95,7 @@ def test_courtesy_sleep_as_timedelta(mocked_courtesy_sleep, server):
 
 
 def test_courtesy_sleep_as_object(mocked_courtesy_sleep, server):
-    client = Client(courtesy_sleep=CourtesySleep(78))
+    client = Client(courtesy_sleep=CourtesySleep(timedelta(seconds=78)))
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
     mocked_courtesy_sleep.assert_called_once()

@@ -32,7 +32,7 @@ class Client:
     def __init__(
         self,
         cache: Optional[Union[Cache, Path, str]] = None,
-        courtesy_sleep: Optional[Union[CourtesySleep, float, timedelta]] = 5,
+        courtesy_sleep: Optional[Union[CourtesySleep, timedelta]] = timedelta(seconds=5),
         session: Optional[Session] = None,
         max_cache_age: Optional[timedelta] = None,
         user_agent: str = f'forban/{FORBAN_VERSION}',
@@ -53,7 +53,7 @@ class Client:
     def fetch(
         self,
         url: Requestable,
-        courtesy_seconds: Optional[float] = None,
+        courtesy_sleep: Optional[timedelta] = None,
         raise_for_status: bool = True,
         force_cache_stale: bool = False,
         allow_redirects: bool = True,
@@ -69,7 +69,7 @@ class Client:
         frame = SCRAPER_LOCAL.stack[-1]
         if frame.is_retry:
             force_cache_stale = True
-            courtesy_seconds = 0
+            courtesy_sleep = timedelta(0)
         req = self._build_request(url, **kwargs)
         preq = self._prepare(req)
         assert preq.url and preq.method  # shut up type linter
@@ -81,7 +81,7 @@ class Client:
             for r in res.history + [res]:
                 self.session.cookies.extract_cookies(MockResponse(r), MockRequest(preq))  # type: ignore
         else:
-            with self.courtesy_sleep(preq, log, courtesy_seconds):
+            with self.courtesy_sleep(preq, log, courtesy_sleep):
                 res = self.session.request(
                     allow_redirects=False,
                     **req.__dict__,
@@ -96,7 +96,7 @@ class Client:
                 raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
             return self.fetch(
                 urljoin(preq.url, res.headers['Location']),
-                courtesy_seconds=0,
+                courtesy_sleep=timedelta(0),
                 raise_for_status=raise_for_status,
                 force_cache_stale=force_cache_stale,
                 cache_key=cache_key and CacheKey.parse(cache_key).next_in_sequence(),

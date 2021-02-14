@@ -4,7 +4,7 @@
 from contextlib import contextmanager
 from datetime import timedelta
 from time import sleep, time
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 # 3rd parties
@@ -16,24 +16,22 @@ from .logs import LogEntry
 
 class CourtesySleep:
 
-    def __init__(self, courtesy_seconds: Optional[Union[float, timedelta]]):
-        if courtesy_seconds is None:
-            courtesy_seconds = 0
-        elif isinstance(courtesy_seconds, timedelta):
-            courtesy_seconds = courtesy_seconds.total_seconds()
-        self.courtesy_seconds = courtesy_seconds
+    def __init__(self, courtesy_sleep: Optional[timedelta]):
+        if courtesy_sleep is None:
+            courtesy_sleep = timedelta(0)
+        self.courtesy_sleep = courtesy_sleep
         self.last_request_per_host: Dict[str, float] = {}
 
     @contextmanager
-    def __call__(self, preq: PreparedRequest, log: LogEntry, courtesy_seconds: Optional[float] = None):
-        if courtesy_seconds is None:
-            courtesy_seconds = self.courtesy_seconds
+    def __call__(self, preq: PreparedRequest, log: LogEntry, courtesy_sleep: Optional[timedelta] = None):
+        if courtesy_sleep is None:
+            courtesy_sleep = self.courtesy_sleep
         host = str(urlparse(preq.url).hostname)
         last_request = self.last_request_per_host.get(host, 0)
-        delay = (last_request + courtesy_seconds) - time()
-        if delay > 0:
-            log.courtesy_seconds = delay
-            sleep(delay)
+        delay_seconds = (last_request + courtesy_sleep.total_seconds()) - time()
+        if delay_seconds > 0:
+            log.courtesy_seconds = delay_seconds
+            sleep(delay_seconds)
         try:
             yield
         finally:

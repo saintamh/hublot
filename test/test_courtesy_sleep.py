@@ -3,6 +3,7 @@
 # You're confused because we're patching the `sleep` function and it's not what you expect, pylint: disable=no-member
 
 # standards
+from datetime import timedelta
 from itertools import combinations
 
 # 3rd parties
@@ -14,21 +15,48 @@ from .utils import dummy_prequest, dummy_response
 
 
 @pytest.mark.parametrize(
-    'courtesy_seconds',
-    [None, 0, 5, 37],
+    'courtesy_sleep',
+    [None, timedelta(seconds=0), timedelta(seconds=5), timedelta(seconds=37)],
 )
-def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_seconds):
-    kwargs = {} if courtesy_seconds is None else {'courtesy_sleep': courtesy_seconds}
+def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_sleep):
+    kwargs = {} if courtesy_sleep is None else {'courtesy_sleep': courtesy_sleep}
     client = Client(**kwargs)
     client.fetch(f'{server}/hello')
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello')
-    if courtesy_seconds == 0:
+    expected_sleep = 5 if courtesy_sleep is None else courtesy_sleep.total_seconds()
+    if expected_sleep == 0:
         mocked_courtesy_sleep.assert_not_called()
     else:
         mocked_courtesy_sleep.assert_called_once()
         delay, = mocked_courtesy_sleep.call_args[0]
-        assert delay == pytest.approx(courtesy_seconds or 5, 0.1)
+        assert delay == pytest.approx(expected_sleep, 0.1)
+
+
+def test_method_kwarg_overrides_default(mocked_courtesy_sleep, server):
+    client = Client()
+    client.fetch(f'{server}/hello')
+    mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
+    client.fetch(f'{server}/hello', courtesy_sleep=timedelta(minutes=1))
+    mocked_courtesy_sleep.assert_called_once()
+    assert mocked_courtesy_sleep.call_args[0][0] == pytest.approx(60, 0.1)
+
+
+def test_method_kwarg_zero_disables_courtesy_sleep(mocked_courtesy_sleep, server):
+    client = Client()
+    client.fetch(f'{server}/hello')
+    mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
+    client.fetch(f'{server}/hello', courtesy_sleep=timedelta(0))
+    mocked_courtesy_sleep.assert_not_called()
+
+
+def test_method_kwarg_zero_none_does_nothing(mocked_courtesy_sleep, server):
+    client = Client()
+    client.fetch(f'{server}/hello')
+    mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
+    client.fetch(f'{server}/hello', courtesy_sleep=None)
+    mocked_courtesy_sleep.assert_called_once()
+    assert mocked_courtesy_sleep.call_args[0][0] == pytest.approx(5, 0.1)  # slept default 5 seconds
 
 
 def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
