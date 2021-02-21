@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 # 3rd parties
 import pytest
-from requests import HTTPError
+from requests import HTTPError, TooManyRedirects
 
 # forban
 from forban import Cache, Client, CourtesySleep
@@ -180,3 +180,9 @@ def test_redirect_response_bodies(cache, server):
         assert res.status_code == 200
         assert res.text == 'Landed'
         assert [r.text for r in res.history] == ['Bounce 1', 'Bounce 2']
+
+
+def test_redirect_loop(client, server):
+    # Make sure that the caching doesn't interfere with Requests' ability to detect redirect loops
+    with pytest.raises(TooManyRedirects):
+        client.fetch(f'{server}/redirect/loop')

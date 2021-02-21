@@ -139,6 +139,18 @@ def flask_app():
         res.set_cookie('redirect3', 'yes')
         return res
 
+    @app.route('/redirect/loop')
+    def redirect_loop():
+        res = make_response('Loop 1', 302)
+        res.headers['Location'] = '/redirect/loop-back'
+        return res
+
+    @app.route('/redirect/loop-back')
+    def redirect_loop_back():
+        res = make_response('Loop 2', 302)
+        res.headers['Location'] = '/redirect/loop'
+        return res
+
     return app
 
 
