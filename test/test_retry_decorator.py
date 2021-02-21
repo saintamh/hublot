@@ -35,7 +35,14 @@ def test_retry_decorator_on_value_error():
     assert fetch() == 'Success on attempt 3'
 
 
-def test_retry_decorator_num_attempts(client, server, unique_key):
+def test_retry_decorator_num_attempts_just_enough(client, server, unique_key):
+    @retry_on_scraper_error(num_attempts=3)
+    def fetch():
+        return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
+    assert fetch() == 'success after 2 failures'
+
+
+def test_retry_decorator_num_attempts_just_not_enough(client, server, unique_key):
     @retry_on_scraper_error(num_attempts=2)
     def fetch():
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
