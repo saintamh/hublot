@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# 3rd parties
+import pytest
+from requests import Response
+
 # forban
 from forban.logs import LogEntry
 from .utils import assert_responses_equal, dummy_prepared_request, dummy_response
@@ -77,3 +81,29 @@ def test_repeated_http_headers_are_cached(reinstantiable_client, server):
     assert res.headers.get_all('Set-Cookie') == ['a=1', 'b=2']
 
     assert [f'{c.name}={c.value!r}' for c in client.session.cookies] == ["a='1'", "b='2'"]
+
+
+def test_cache_wont_save_body_with_wrong_length(client):
+    preq = dummy_prepared_request(
+        client,
+        data=b'More than one byte',
+    )
+    preq.headers['Content-Length'] = '1'
+    response = Response()
+    response.request = preq
+    with pytest.raises(Exception) as ex:
+        client.cache.put(preq, LogEntry(preq), response)
+    assert 'body has 18 bytes but Content-Length is 1' in str(ex)
+
+
+def test_cache_wont_save_get_request_with_content_length(client):
+    preq = dummy_prepared_request(
+        client,
+        method='GET',
+    )
+    preq.headers['Content-Length'] = '999'
+    response = Response()
+    response.request = preq
+    with pytest.raises(Exception) as ex:
+        client.cache.put(preq, LogEntry(preq), response)
+    assert 'body is None but Content-Length is 999' in str(ex)
