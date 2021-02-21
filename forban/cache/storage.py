@@ -15,7 +15,7 @@ from .binaryblob import compose_binary_blob, parse_binary_blob
 from .key import CacheKey
 
 
-class Storage:
+class Storage:  # pragma: no cover
 
     def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]:
         raise NotImplementedError
