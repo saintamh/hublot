@@ -10,11 +10,11 @@ import pytest
 # forban
 from forban.cache import CacheKey
 from forban.logs import LogEntry
-from .utils import assert_responses_equal, dummy_prequest, dummy_response, iter_equal_pairs, iter_nonequal_pairs
+from .utils import assert_responses_equal, dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 
 def test_simple_cache_use(client):
-    preq = dummy_prequest(client)
+    preq = dummy_prepared_request(client)
     log = LogEntry(preq)
     cache = client.cache
     assert cache.get(preq, log) is None
@@ -105,8 +105,8 @@ EQUIVALENCIES = [
     iter_nonequal_pairs(EQUIVALENCIES),
 )
 def test_unique_keys(client, config_1, config_2):
-    key = CacheKey.compute(dummy_prequest(client, **config_1))
-    other_key = CacheKey.compute(dummy_prequest(client, **config_2))
+    key = CacheKey.compute(dummy_prepared_request(client, **config_1))
+    other_key = CacheKey.compute(dummy_prepared_request(client, **config_2))
     assert key != other_key
 
 
@@ -116,8 +116,8 @@ def test_unique_keys(client, config_1, config_2):
 )
 def test_unique_requests(client, config_1, config_2):
     cache = client.cache
-    preq_1 = dummy_prequest(client, **config_1)
-    preq_2 = dummy_prequest(client, **config_2)
+    preq_1 = dummy_prepared_request(client, **config_1)
+    preq_2 = dummy_prepared_request(client, **config_2)
     cache.put(preq_1, LogEntry(preq_1), dummy_response(preq_1))
     assert cache.get(preq_2, LogEntry(preq_2)) is None
 
@@ -127,8 +127,8 @@ def test_unique_requests(client, config_1, config_2):
     iter_equal_pairs(EQUIVALENCIES),
 )
 def test_equivalent_keys(client, config_1, config_2):
-    key_1 = CacheKey.compute(dummy_prequest(client, **config_1))
-    key_2 = CacheKey.compute(dummy_prequest(client, **config_2))
+    key_1 = CacheKey.compute(dummy_prepared_request(client, **config_1))
+    key_2 = CacheKey.compute(dummy_prepared_request(client, **config_2))
     assert key_1 == key_2, (config_1, config_2)
 
 
@@ -138,8 +138,8 @@ def test_equivalent_keys(client, config_1, config_2):
 )
 def test_equivalent_requests(client, config_1, config_2):
     cache = client.cache
-    preq_1 = dummy_prequest(client, **config_1)
-    preq_2 = dummy_prequest(client, **config_2)
+    preq_1 = dummy_prepared_request(client, **config_1)
+    preq_2 = dummy_prepared_request(client, **config_2)
     response = dummy_response(preq_1)
     assert cache.get(preq_2, LogEntry(preq_2)) is None  # else test is invalid
     cache.put(preq_1, LogEntry(preq_1), response)
@@ -151,7 +151,7 @@ def test_equivalent_requests(client, config_1, config_2):
 
 def test_cache_updates_log_entry_attributes(client):
     cache = client.cache
-    preq = dummy_prequest(client)
+    preq = dummy_prepared_request(client)
     log = LogEntry(preq)
     assert log.cache_key_str is None
     assert log.cached is None

@@ -2,7 +2,7 @@
 
 # forban
 from forban.logs import LogEntry
-from .utils import assert_responses_equal, dummy_prequest, dummy_response
+from .utils import assert_responses_equal, dummy_prepared_request, dummy_response
 
 
 def iter_pairs(client):
@@ -11,7 +11,7 @@ def iter_pairs(client):
             for headers in ({}, {'X-Test': '1'}, {'X-Test': '2'}):
                 # NB there's more comprehensive tests for cache key equivalent in `test_cache_keys.py`, but here's a sample
                 request_kwargs = {'url': url, 'method': method, 'headers': headers, 'data': body}
-                preq = dummy_prequest(client, **request_kwargs)
+                preq = dummy_prepared_request(client, **request_kwargs)
                 res = dummy_response(preq)
                 yield request_kwargs, res
 
@@ -19,7 +19,7 @@ def iter_pairs(client):
 def test_cache(reinstantiable_client):
     client = reinstantiable_client()
     pairs = [
-        (dummy_prequest(client, **req), res)
+        (dummy_prepared_request(client, **req), res)
         for req, res in iter_pairs(client)
     ]
     log_entries = [

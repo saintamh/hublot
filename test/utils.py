@@ -13,7 +13,7 @@ from requests.structures import CaseInsensitiveDict
 from forban import Client
 
 
-def dummy_prequest(client: Client, **kwargs):
+def dummy_prepared_request(client: Client, **kwargs):
     url = kwargs.pop('url', 'http://example.com/test')
     kwargs.setdefault('method', 'POST')
     if kwargs['method'] in ('POST', 'PUT'):
