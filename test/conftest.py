@@ -55,8 +55,9 @@ def client(cache):
 
 
 def flask_app():
+    # Yeah, we don't call these directly, but they still need names, pylint: disable=unused-variable
+    # And yes, it's a bit long for a function, but it's still readable, pylint: disable=too-many-locals
     app = Flask('forban-tests')
-    # yeah we don't call these directly, but they still need names, pylint: disable=unused-variable
 
     @app.route('/hello')
     def hello():
@@ -88,14 +89,20 @@ def flask_app():
     def fail_with_random_value():
         return str(random()), 500
 
+    num_calls_by_key = {}
     num_failures_by_key = {}
     @app.route('/fail-twice-then-succeed/<key>')
     def fail_twice_then_succeed(key):
+        num_calls = num_calls_by_key.get(key, 0)
+        num_calls_by_key[key] = num_calls + 1
         num_failures = num_failures_by_key.get(key, 0)
-        num_failures_by_key[key] = num_failures + 1
-        if num_failures < 2:
+        if num_calls < 2:
+            num_failures_by_key[key] = num_failures + 1
             return f'crash {num_failures}', 500
-        return f'success after {num_failures} failures', 200
+        status = f'success after {num_failures} failures'
+        if num_calls > num_failures:
+            status += f' and {num_calls - num_failures} successes'
+        return status, 200
 
     @app.route('/cookies/get')
     def get_cookie():

@@ -2,6 +2,8 @@
 
 # standards
 from itertools import count
+from random import choices
+from string import ascii_letters
 
 # 3rd parties
 import pytest
@@ -116,3 +118,21 @@ def test_no_courtesy_sleep_on_retries(mocked_courtesy_sleep, client, server, uni
     sleeps = [call[0][0] for call in mocked_courtesy_sleep.call_args_list]
     # we should've slept on the 1st call b/c we'd just called the server, then no sleep on subsequent calls
     assert sleeps == [pytest.approx(5, 0.1)]
+
+
+def test_decorated_function_fetches_twice(client, server):
+    key_1 = ''.join(choices(ascii_letters, k=32))
+    key_2 = ''.join(choices(ascii_letters, k=32))
+
+    @retry_on_scraper_error
+    def fetch():
+        return [
+            client.get(f'{server}/fail-twice-then-succeed/{key_1}').text,
+            client.get(f'{server}/fail-twice-then-succeed/{key_2}').text,
+        ]
+
+    # The call will succeed on the 5th attempt -- the 1st call fails twice (and the 2nd isn't even reached), then the 2nd call
+    # fails twice, then they both work. Because force_cache_stale=True on every retry and applies to both calls, the 1st call was
+    # not cached, even after it had succeeded -- when the decorator performs a retry, *all* requests within it are uncached. For
+    # that reason the 1st endpoint ends up being called 4 times, and the 2nd one 3 times.
+    assert fetch() == ['success after 2 failures and 2 successes', 'success after 2 failures']
