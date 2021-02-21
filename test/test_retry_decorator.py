@@ -10,21 +10,21 @@ import pytest
 from forban import ScraperError, retry_on_scraper_error
 
 
-def test_scraper_decorator_no_exception(client, server):
+def test_retry_decorator_no_exception(client, server):
     @retry_on_scraper_error
     def fetch():
         return client.get(f'{server}/hello').text
     assert fetch() == 'hello'
 
 
-def test_scraper_decorator_on_http_error(client, server, unique_key):
+def test_retry_decorator_on_http_error(client, server, unique_key):
     @retry_on_scraper_error
     def fetch():
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
     assert fetch() == 'success after 2 failures'
 
 
-def test_scraper_decorator_on_value_error():
+def test_retry_decorator_on_value_error():
     counter = count()
     @retry_on_scraper_error
     def fetch():
@@ -35,7 +35,7 @@ def test_scraper_decorator_on_value_error():
     assert fetch() == 'Success on attempt 3'
 
 
-def test_scraper_decorator_num_attempts(client, server, unique_key):
+def test_retry_decorator_num_attempts(client, server, unique_key):
     @retry_on_scraper_error(num_attempts=2)
     def fetch():
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
@@ -43,7 +43,7 @@ def test_scraper_decorator_num_attempts(client, server, unique_key):
         fetch()
 
 
-def test_scraper_decorator_doesnt_catch_other_exceptions():
+def test_retry_decorator_doesnt_catch_other_exceptions():
     @retry_on_scraper_error
     def fetch():
         raise KeyError('x')
@@ -51,7 +51,7 @@ def test_scraper_decorator_doesnt_catch_other_exceptions():
         fetch()
 
 
-def test_scraper_decorator_error_types():
+def test_retry_decorator_error_types():
     counter = count()
     @retry_on_scraper_error(error_types=[KeyError])
     def fetch():
