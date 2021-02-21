@@ -153,7 +153,7 @@ class Client:
         else:
             return obj
 
-    ### for a thin layer of Requests compatility
+    ### for a thin layer of Requests compatibility
 
     def request(self, method: str, url: str, **kwargs) -> Response:
         return self.fetch(url, method=method, **kwargs)
