@@ -136,3 +136,26 @@ def test_decorated_function_fetches_twice(client, server):
     # not cached, even after it had succeeded -- when the decorator performs a retry, *all* requests within it are uncached. For
     # that reason the 1st endpoint ends up being called 4 times, and the 2nd one 3 times.
     assert fetch() == ['success after 2 failures and 2 successes', 'success after 2 failures']
+
+
+def test_decorator_on_client_from_outer_scope(reinstantiable_client, server, unique_key):
+    client = reinstantiable_client()
+    @retry_on_scraper_error
+    def fetch():
+        return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
+    assert fetch() == 'success after 2 failures'
+
+
+def test_decorator_on_client_passed_as_argument(reinstantiable_client, server, unique_key):
+    @retry_on_scraper_error
+    def fetch(c):
+        return c.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
+    assert fetch(reinstantiable_client()) == 'success after 2 failures'
+
+
+def test_decorator_on_client_created_within_function(reinstantiable_client, server, unique_key):
+    @retry_on_scraper_error
+    def fetch():
+        client = reinstantiable_client()
+        return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
+    assert fetch() == 'success after 2 failures'
