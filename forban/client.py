@@ -15,7 +15,7 @@ from .cache import Cache, CacheKey, UserSpecifiedCacheKey
 from .courtesy import CourtesySleep
 from .decorator import SCRAPER_LOCAL
 from .logs import LOGGER, LogEntry
-from .utils import ForbanCookiePolicy
+from .utils import ForbanCookiePolicy, MockResponse
 from .version import FORBAN_VERSION
 
 
@@ -78,8 +78,7 @@ class Client:
         if self.cache and not force_cache_stale:
             res = self.cache.get(preq, log, cache_key, max_cache_age)
         if res is not None:
-            for r in res.history + [res]:
-                self.session.cookies.extract_cookies(MockResponse(r), MockRequest(preq))  # type: ignore
+            self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore
         else:
             with self.courtesy_sleep(preq, log, courtesy_sleep):
                 res = self.session.request(
@@ -164,27 +163,3 @@ class Client:
 
     def post(self, url: str, data=None, **kwargs) -> Response:
         return self.fetch(url, method='POST', data=data, **kwargs)
-
-
-class MockResponse:
-
-    def __init__(self, response: Response):
-        self.response = response
-
-    def info(self):
-        return self
-
-    def get_all(self, name, failobj=None):
-        # This is a mock of `email.message.EmailMessage.get_all` -- ``Return a list of all the values for the field named name. If
-        # there are no such named headers in the message, failobj is returned''
-        #
-        # See https://docs.python.org/3.8/library/email.message.html#email.message.EmailMessage.get_all
-        if callable(getattr(self.response.headers, 'get_all', None)):
-            # It must be that `headers` is a `MultipleCaseInsensitiveDict` that we created when loading from cache. It gives us the
-            # un-joined cookies, use that
-            return self.response.headers.get_all(name, failobj)
-        else:
-            # Fall back to reading from the ', '-joined string.
-            if name in self.response.headers:
-                return [self.response.headers[name]]
-        return failobj

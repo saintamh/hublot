@@ -7,9 +7,11 @@ from typing import Optional, Union
 
 # 3rd parties
 from requests import PreparedRequest, Response
+from requests.cookies import MockRequest
 
 # forban
 from ..logs import LogEntry
+from ..utils import MockResponse
 from .key import CacheKey, UserSpecifiedCacheKey
 from .storage import DiskStorage, Storage
 
@@ -42,6 +44,7 @@ class Cache:
         res = self.storage.read(key, max_age)
         if res is not None:
             res.request = preq  # the storage doesn't need to store and recreate the request
+            res.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore[arg-type]
             log.cached = True
         else:
             res = None
