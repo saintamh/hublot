@@ -81,7 +81,7 @@ class Cache:
                 storage=DiskStorage(root_path=cache),
                 max_age=max_age,
             )
-        elif isinstance(cache, str) and cache.startswith('s3://'):
+        elif isinstance(cache, str) and cache.startswith('s3://'):  # pragma: no cover
             raise NotImplementedError  # some day
         else:
             raise ValueError(repr(cache))

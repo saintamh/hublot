@@ -2,7 +2,7 @@
 
 # standards
 from collections import OrderedDict
-from itertools import count
+from itertools import count, product
 
 # 3rd parties
 import pytest
@@ -168,6 +168,7 @@ TEST_KEYS = [
     ('space string', '/space%20string', 'space%20string'),
     ('slash/string', '/slash/string', 'slash/string'),
     ('/slash/string', '/slash/string', 'slash/string'),
+    ('slash/string/', '/slash/string', 'slash/string'),
     (('item', '123'), '/item/123', 'item/123'),
     (('slash', '/'), '/slash/%2F', 'slash/%2F'),
 ]
@@ -199,7 +200,7 @@ def test_user_specified_cache_key(client, server):
         client.get(
             f'{server}/unique-number',
             cache_key=key,
-            params={'random': str(next(counter))}
+            params={'unique': str(next(counter))}
         ).text
         for key in all_keys
     ]
@@ -208,8 +209,8 @@ def test_user_specified_cache_key(client, server):
         obtained = client.get(
             f'{server}/unique-number',
             cache_key=key,
-            # the URL is actually different, but the cache key isn't, so we should get the same value back
-            params={'random': str(next(counter))}
+            # the param is actually different, but the cache key isn't, so we should get the same value back
+            params={'unique': str(next(counter))}
         ).text
         assert obtained == expected
 
@@ -222,3 +223,36 @@ def test_user_specified_cache_key_on_redirect(client, server):
     assert res.text == 'Landed'
     all_keys_in_cache = sorted(k.unique_str for k in client.cache.storage.iter_all_keys())
     assert all_keys_in_cache == ['fixed', 'fixed.1', 'fixed.2']
+
+
+@pytest.mark.parametrize(
+    'key_1, key_2, should_match',
+    [
+        (key_1, key_2, group_1 is group_2)
+        for group_1, group_2 in product(
+            # Keys from the same line here should match each other, and keys from different lines shouldn't
+            [
+                (CacheKey(parts=('a', 'b')), ('a', 'b'), 'a/b'),
+                (CacheKey(parts=('A', 'B')), ('A', 'B'), 'A/B'),
+                (CacheKey(parts=('b', 'c')), ('b', 'c'), 'b/c'),
+            ],
+            repeat=2,
+        )
+        for key_1 in group_1
+        for key_2 in group_2
+    ]
+)
+def test_different_ways_to_express_cache_keys(client, server, key_1, key_2, should_match):
+    counter = count()
+    response_1, response_2 = (
+        client.get(
+            f'{server}/unique-number',
+            cache_key=key,
+            params={'unique': str(next(counter))}
+        ).text
+        for key in (key_1, key_2)
+    )
+    if should_match:
+        assert response_1 == response_2
+    else:
+        assert response_1 != response_2

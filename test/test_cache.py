@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 
+# standards
+from datetime import timedelta
+from pathlib import Path
+
 # 3rd parties
 import pytest
 from requests import Response
 
 # forban
+from forban import Client
+from forban.cache.storage import DiskStorage
 from forban.logs import LogEntry
 from .utils import assert_responses_equal, dummy_prepared_request, dummy_response
 
@@ -107,3 +113,22 @@ def test_cache_wont_save_get_request_with_content_length(client):
     with pytest.raises(Exception) as ex:
         client.cache.put(preq, LogEntry(preq), response)
     assert 'body is None but Content-Length is 999' in str(ex)
+
+
+def test_cant_pass_cache_kwargs_and_preinstantiated_cache(cache):
+    with pytest.raises(Exception) as ex:
+        Client(cache=cache, max_cache_age=timedelta(10))
+    assert "can't specify a max_age" in str(ex)
+
+
+def test_cache_can_be_specified_as_path():
+    client = Client(cache=Path('/cache'))
+    assert isinstance(client.cache.storage, DiskStorage)
+    assert client.cache.storage.root_path == Path('/cache')
+
+
+def test_cache_cannot_be_specified_as_str():
+    # The idea of not accepting strings is mostly to just keep the client code readable, and maybe preserve forward flexibility.
+    # But if this ever a problem, we could consider auto-converting str objects to Path objects.
+    with pytest.raises(ValueError):
+        Client(cache='/cache')
