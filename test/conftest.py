@@ -68,7 +68,7 @@ def flask_app():
         return request.method
 
     iter_numbers = count()
-    @app.route('/unique-number')
+    @app.route('/unique-number', methods=['GET', 'POST'])
     def unique_number():
         return str(next(iter_numbers))
 

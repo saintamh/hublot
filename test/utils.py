@@ -6,7 +6,7 @@ from itertools import combinations, product
 from typing import Dict, Optional
 
 # 3rd parties
-from requests import PreparedRequest, Response
+from requests import PreparedRequest, Request, Response
 from requests.structures import CaseInsensitiveDict
 
 # forban
@@ -15,9 +15,10 @@ from forban import Client
 
 def dummy_prepared_request(client: Client, **kwargs):
     url = kwargs.pop('url', 'http://example.com/test')
-    kwargs.setdefault('method', 'POST')
-    if kwargs['method'] in ('POST', 'PUT'):
-        kwargs.setdefault('data', b'This is my request data')
+    if not isinstance(url, Request):
+        kwargs.setdefault('method', 'POST')
+        if kwargs['method'] in ('POST', 'PUT'):
+            kwargs.setdefault('data', b'This is my request data')
     return client._prepare(client._build_request(url, **kwargs))  # pylint: disable=protected-access
 
 

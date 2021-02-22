@@ -10,6 +10,13 @@ def test_cookies_are_saved(client, server):
     assert client.get(f'{server}/cookies/get').json() == {'coo': 'kie'}
 
 
+def test_cookies_are_available_via_client(cache, server):
+    for _ in (1, 2):
+        client = Client(cache=cache)  # keep cache, clear cookies
+        client.get(f'{server}/cookies/set?coo=kie')
+        assert dict(client.cookies) == {'coo': 'kie'}
+
+
 def test_cookies_are_available_via_session(cache, server):
     for _ in (1, 2):
         client = Client(cache=cache)  # keep cache, clear cookies

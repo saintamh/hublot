@@ -6,6 +6,7 @@ from itertools import count, product
 
 # 3rd parties
 import pytest
+from requests import Request
 
 # forban
 from forban.cache import CacheKey
@@ -97,6 +98,47 @@ EQUIVALENCIES = [
             'headers': {'Content-Type': 'application/json'},
         },
     ],
+
+    # requests can be specified as `Request` objects
+    [
+        {'url': 'http://cache-test/request-objects', 'method': 'GET'},
+        {'url': 'http://cache-test/request-objects', 'method': 'GET', 'params': {}},
+        {'url': Request(url='http://cache-test/request-objects', method='GET')},
+        {'url': Request(url='http://cache-test/request-objects', method='GET', params={})},
+    ],
+    [
+        {'url': 'http://cache-test/request-objects', 'method': 'POST', 'data': {}},
+        {'url': Request(url='http://cache-test/request-objects', method='POST', data={})},
+    ],
+    [
+        {
+            'url': 'http://cache-test/request-objects',
+            'method': 'POST',
+            'data': {'a': '1'},
+        },
+        {
+            'url': 'http://cache-test/request-objects',
+            'method': 'POST',
+            'data': 'a=1',
+            'headers': {'Content-Type': 'application/x-www-form-urlencoded'},
+        },
+        {
+            'url': Request(
+                url='http://cache-test/request-objects',
+                method='POST',
+                data={'a': '1'},
+            ),
+        },
+        {
+            'url': Request(
+                url='http://cache-test/request-objects',
+                method='POST',
+                data='a=1',
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            ),
+        },
+    ],
+
 ]
 
 
@@ -129,6 +171,8 @@ def test_unique_requests(client, config_1, config_2):
 def test_equivalent_keys(client, config_1, config_2):
     key_1 = CacheKey.compute(dummy_prepared_request(client, **config_1))
     key_2 = CacheKey.compute(dummy_prepared_request(client, **config_2))
+    print(dummy_prepared_request(client, **config_1).__dict__)
+    print(dummy_prepared_request(client, **config_2).__dict__)
     assert key_1 == key_2, (config_1, config_2)
 
 
@@ -256,3 +300,14 @@ def test_different_ways_to_express_cache_keys(client, server, key_1, key_2, shou
         assert response_1 == response_2
     else:
         assert response_1 != response_2
+
+
+def test_cache_key_of_unknown_class(client):
+    class MyRandoClass:
+        pass
+
+    with pytest.raises(TypeError):
+        client.fetch(
+            'http://whatever/',
+            cache_key=MyRandoClass(),
+        )
