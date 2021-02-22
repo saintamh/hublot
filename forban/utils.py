@@ -7,7 +7,7 @@ from http.cookiejar import CookiePolicy
 from requests import Response
 
 
-class ForbanCookiePolicy(CookiePolicy):
+class ForbanCookiePolicy(CookiePolicy):  # pragma: no cover, we don't care how this gets called, as long as it works
 
     netscape = True
     rfc2965 = False
@@ -30,7 +30,7 @@ class ForbanCookiePolicy(CookiePolicy):
         return self.cookies_enabled
 
 
-class MockResponse:
+class MockResponse: # pragma: no cover -- again, as long as it works, we don't care how urllib3 or whatever it is calls this
 
     def __init__(self, response: Response):
         self.response = response

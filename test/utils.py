@@ -64,7 +64,7 @@ def assert_responses_equal(res1, res2):
     state2['request'] = state2['request'] and state2['request'].__dict__
     try:
         assert state1 == state2
-    except AssertionError:
+    except AssertionError:  # pragma: no cover, if the tests pass then this won't get called
         print(state1)
         print(state2)
         raise
