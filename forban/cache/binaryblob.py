@@ -3,9 +3,9 @@
 """
 Functions for serialising request and response objects to binary blobs, which can then be stored in any storage.
 
-The format used is designed to mimic the HTTP exchange that travels on the wire, i.e. the blob starts with a rendering of the HTTP
-request head, then request body if present, then the response head, then body. This makes it convenient to inspect the blobs for
-manual debugging.
+The format used is designed to mimic the HTTP exchange that travels on the wire, i.e. the blob starts with an loose rendering of
+the HTTP request head, then request body if present, then the response head, then body. This makes it convenient to inspect the
+blobs for manual debugging.
 """
 
 # standards
@@ -146,7 +146,7 @@ class MultipleCaseInsensitiveDict(CaseInsensitiveDict):  # pylint: disable=too-m
         return ', '.join(values)
 
     def get_all(self, key, failobj=None):
-        # Deliverately copying the interface of `email.message.EmailMessage.get_all` for consistency's sake, though we're not
+        # Deliberately copying the interface of `email.message.EmailMessage.get_all` for consistency's sake, though we're not
         # actually using this object in place of that.
         try:
             return super().__getitem__(key)
