@@ -161,6 +161,11 @@ def test_http_errors_are_raised(client, server):
         client.get(f'{server}/fail-with-random-value')
 
 
+def test_auto_raise_can_be_disabled(client, server):
+    res = client.get(f'{server}/fail-with-random-value', raise_for_status=False)
+    assert res.status_code == 500
+
+
 def test_redirect(client, server):
     res = client.get(f'{server}/redirect/chain/1')
     assert res.status_code == 200
