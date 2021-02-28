@@ -41,7 +41,10 @@ def reinstantiable_client(reinstantiable_cache):
     """
     A callable that can be called repeatedly to reinstantiate a Client with the same cache parameters.
     """
-    yield lambda **kwargs: Client(cache=reinstantiable_cache(**kwargs))
+    yield lambda cookies_enabled=True, **kwargs: Client(
+        cache=reinstantiable_cache(**kwargs),
+        cookies_enabled=cookies_enabled,
+    )
 
 
 @pytest.fixture

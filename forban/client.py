@@ -94,6 +94,7 @@ class Client:
             force_cache_stale,
             allow_redirects,
             cache_key,
+            max_cache_age,
             _redirected_from,
         )
 
@@ -167,6 +168,7 @@ class Client:
         force_cache_stale: bool,
         allow_redirects: bool,
         cache_key: Optional[UserSpecifiedCacheKey],
+        max_cache_age: Optional[timedelta],
         _redirected_from: Optional[Response],
     ):
         """
@@ -182,6 +184,7 @@ class Client:
                 raise_for_status=raise_for_status,
                 force_cache_stale=force_cache_stale,
                 cache_key=cache_key and CacheKey.parse(cache_key).next_in_sequence(),
+                max_cache_age=max_cache_age,
                 _redirected_from=res,
             )
         if raise_for_status:

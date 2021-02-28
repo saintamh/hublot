@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
 # standards
+from contextlib import contextmanager
 from datetime import datetime, timedelta
+import gzip
+from itertools import count, product
+from os import utime
+
+# 3rd parties
+import pytest
 
 
 def _fetch_unique_number_then_move_clock_to_next_day(mocker, reinstantiable_client, server):
@@ -72,3 +79,46 @@ def test_cant_override_with_null_age(mocker, reinstantiable_client, server):
     mocker.patch('forban.cache.storage.current_datetime', return_value=now + timedelta(days=1))
     # again, re-use the same client to ensure there's no pruning
     assert unique != client.get(f'{server}/unique-number', max_cache_age=None).text
+
+
+@pytest.mark.parametrize(
+    'redirect_step_is_cached',
+    product([False, True], repeat=3),
+)
+def test_max_age_applies_when_following_redirects(mocker, reinstantiable_client, server, redirect_step_is_cached):
+    now = datetime.now()
+    mocker.patch('forban.cache.storage.current_datetime', lambda: now)
+
+    @contextmanager
+    def mocked_gzip_open(path, *rest, **kwargs):
+        with _real_gzip_open(path, *rest, **kwargs) as f:
+            yield f
+        utime(path, (now.timestamp(), now.timestamp()))
+    _real_gzip_open = gzip.open
+    mocker.patch('forban.cache.storage.gzip.open', mocked_gzip_open)
+
+    client = reinstantiable_client(
+        cookies_enabled=False,  # disable cookies as they would invalidate the cache
+    )
+
+    # first, cache every step of the redirect chain
+    client.fetch(f'{server}/redirect/chain/1')
+
+    # then on the next day, freshen the cache for the redirect steps that should be read from cache
+    now += timedelta(hours=24)
+    for step_num, is_cached in zip(count(1), redirect_step_is_cached):
+        if is_cached:
+            client.fetch(
+                f'{server}/redirect/chain/{step_num}',
+                allow_redirects=False,
+                force_cache_stale=True,
+            )
+
+    # now if you re-fetch the whole chain, only the ones that were freshly fetched should be read from cache
+    now += timedelta(hours=12)
+    res = client.fetch(
+        f'{server}/redirect/chain/1',
+        max_cache_age=timedelta(hours=24),
+    )
+
+    assert [r.from_cache for r in [*res.history, res]] == list(redirect_step_is_cached)
