@@ -132,3 +132,9 @@ def test_cache_cannot_be_specified_as_str():
     # But if this ever a problem, we could consider auto-converting str objects to Path objects.
     with pytest.raises(ValueError):
         Client(cache='/cache')
+
+
+def test_from_cache_attribute(client, server):
+    for from_cache in (False, True):
+        res = client.fetch(f'{server}/hello')
+        assert res.from_cache == from_cache

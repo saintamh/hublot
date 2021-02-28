@@ -72,38 +72,30 @@ class Client:
             courtesy_sleep = timedelta(0)
         req = self._build_request(url, **kwargs)
         preq = self._prepare(req)
-        assert preq.url and preq.method  # shut up type linter
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
-        res = None
-        if self.cache and not force_cache_stale:
-            res = self.cache.get(preq, log, cache_key, max_cache_age)
-        if res is not None:
+        res = self._fetch_response(
+            req,
+            preq,
+            log,
+            courtesy_sleep,
+            force_cache_stale,
+            cache_key,
+            max_cache_age,
+        )
+        if res.from_cache:  # type: ignore[attr-defined]  # we add that attribute
             self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore
-        else:
-            with self.courtesy_sleep(preq, log, courtesy_sleep):
-                res = self.session.request(
-                    allow_redirects=False,
-                    **req.__dict__,
-                )
-            if self.cache:
-                self.cache.put(preq, log, res, cache_key)
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
         LOGGER.info('%s', log)
-        if allow_redirects and res.is_redirect:
-            if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
-                raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
-            return self.fetch(
-                urljoin(preq.url, res.headers['Location']),
-                courtesy_sleep=timedelta(0),
-                raise_for_status=raise_for_status,
-                force_cache_stale=force_cache_stale,
-                cache_key=cache_key and CacheKey.parse(cache_key).next_in_sequence(),
-                _redirected_from=res,
-            )
-        if raise_for_status:
-            res.raise_for_status()
-        return res
+        return self._handle_response(
+            preq,
+            res,
+            raise_for_status,
+            force_cache_stale,
+            allow_redirects,
+            cache_key,
+            _redirected_from,
+        )
 
     @staticmethod
     def _build_request(url: Requestable, **kwargs) -> Request:
@@ -138,6 +130,63 @@ class Client:
         req.files = self._read_files_to_memory(req.files)
         req.headers.setdefault('User-Agent', self.user_agent)
         return self.session.prepare_request(req)
+
+    def _fetch_response(
+        self,
+        req: Request,
+        preq: PreparedRequest,
+        log: LogEntry,
+        courtesy_sleep: Optional[timedelta],
+        force_cache_stale: bool,
+        cache_key: Optional[UserSpecifiedCacheKey],
+        max_cache_age: Optional[timedelta],
+    ) -> Response:
+        """
+        Either read the Response from cache, or perform the HTTP transaction and save the response to cache
+        """
+        if self.cache and not force_cache_stale:
+            res = self.cache.get(preq, log, cache_key, max_cache_age)
+            if res is not None:
+                res.from_cache = True  # type: ignore[attr-defined]  # we add that attribute
+                return res
+        with self.courtesy_sleep(preq, log, courtesy_sleep):
+            res = self.session.request(
+                allow_redirects=False,
+                **req.__dict__,
+            )
+        res.from_cache = False  # type: ignore[attr-defined]  # we add that attribute
+        if self.cache:
+            self.cache.put(preq, log, res, cache_key)
+        return res
+
+    def _handle_response(
+        self,
+        preq: PreparedRequest,
+        res: Response,
+        raise_for_status: bool,
+        force_cache_stale: bool,
+        allow_redirects: bool,
+        cache_key: Optional[UserSpecifiedCacheKey],
+        _redirected_from: Optional[Response],
+    ):
+        """
+        Examine the `Response` we just got, and decide what to do with it: follow a redirect (if any), raise an exception, or just
+        return the response.
+        """
+        if allow_redirects and res.is_redirect:
+            if _redirected_from and len(_redirected_from.history) >= MAX_REDIRECTS:
+                raise TooManyRedirects(f'Exceeded {MAX_REDIRECTS} redirects')
+            return self.fetch(
+                urljoin(preq.url, res.headers['Location']),  # type: ignore  # we've checked that `preq.url` is not None
+                courtesy_sleep=timedelta(0),
+                raise_for_status=raise_for_status,
+                force_cache_stale=force_cache_stale,
+                cache_key=cache_key and CacheKey.parse(cache_key).next_in_sequence(),
+                _redirected_from=res,
+            )
+        if raise_for_status:
+            res.raise_for_status()
+        return res
 
     def _read_files_to_memory(self, obj: Any) -> Any:
         """
