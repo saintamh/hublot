@@ -179,6 +179,12 @@ def test_redirect_response_bodies(cache, server):
         res = client.get(f'{server}/redirect/chain/1')
         assert res.status_code == 200
         assert res.text == 'Landed'
+
+
+def test_redirects_set_response_history(cache, server):
+    for _ in (1, 2):
+        client = Client(cache=cache)
+        res = client.get(f'{server}/redirect/chain/1')
         assert [r.text for r in res.history] == ['Bounce 1', 'Bounce 2']
 
 
