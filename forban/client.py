@@ -83,7 +83,7 @@ class Client:
             max_cache_age,
         )
         if res.from_cache:  # type: ignore[attr-defined]  # we add that attribute
-            self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore
+            self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore[arg-type]
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
         LOGGER.info('%s', log)

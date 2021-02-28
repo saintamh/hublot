@@ -96,7 +96,7 @@ def parse_binary_blob(data: bytes) -> Response:
     res.reason = reason
     res.url = url
     res.headers, res._content, pos = _parse_message(data, pos, read_to_end=True)
-    res._content_consumed = True  # type: ignore
+    res._content_consumed = True  # type: ignore[attr-defined]
     return res
 
 
