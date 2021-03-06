@@ -28,4 +28,5 @@ repos:
     entry: pytest
     language: python
     types: [python]
-    args: [test]
+    pass_filenames: false
+    always_run: true
