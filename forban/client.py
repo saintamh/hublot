@@ -3,7 +3,7 @@
 # standards
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 from urllib.parse import urljoin
 
 # 3rd parties
@@ -37,6 +37,7 @@ class Client:
         max_cache_age: Optional[timedelta] = None,
         user_agent: str = f'forban/{FORBAN_VERSION}',
         cookies_enabled: bool = True,
+        proxies: Optional[Dict[str, str]] = None,
     ):
         self.cache = Cache.load(cache, max_cache_age)
         if not isinstance(courtesy_sleep, CourtesySleep):
@@ -45,6 +46,7 @@ class Client:
         self.session = session or Session()
         self.session.cookies.set_policy(ForbanCookiePolicy(cookies_enabled))
         self.user_agent = user_agent
+        self.proxies = proxies
 
     @property
     def cookies(self):
@@ -59,6 +61,7 @@ class Client:
         allow_redirects: bool = True,
         cache_key: Optional[UserSpecifiedCacheKey] = None,
         max_cache_age: Optional[timedelta] = None,
+        proxies: Optional[Dict[str, str]] = None,
         _redirected_from: Optional[Response] = None,
         **kwargs,
     ) -> Response:
@@ -81,6 +84,7 @@ class Client:
             force_cache_stale,
             cache_key,
             max_cache_age,
+            proxies,
         )
         if res.from_cache:  # type: ignore[attr-defined]  # we add that attribute
             self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore[arg-type]
@@ -141,10 +145,12 @@ class Client:
         force_cache_stale: bool,
         cache_key: Optional[UserSpecifiedCacheKey],
         max_cache_age: Optional[timedelta],
+        proxies: Optional[Dict[str, str]],
     ) -> Response:
         """
         Either read the Response from cache, or perform the HTTP transaction and save the response to cache
         """
+        proxies = {**(self.proxies or {}), **(proxies or {})}
         if self.cache and not force_cache_stale:
             res = self.cache.get(preq, log, cache_key, max_cache_age)
             if res is not None:
@@ -153,6 +159,7 @@ class Client:
         with self.courtesy_sleep(preq, log, courtesy_sleep):
             res = self.session.request(
                 allow_redirects=False,
+                proxies=proxies,
                 **req.__dict__,
             )
         res.from_cache = False  # type: ignore[attr-defined]  # we add that attribute
