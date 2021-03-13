@@ -45,8 +45,9 @@ class Client:
         self.courtesy_sleep = courtesy_sleep
         self.session = session or Session()
         self.session.cookies.set_policy(ForbanCookiePolicy(cookies_enabled))
+        if proxies:
+            self.session.proxies = proxies
         self.user_agent = user_agent
-        self.proxies = proxies
 
     @property
     def cookies(self):
@@ -150,7 +151,6 @@ class Client:
         """
         Either read the Response from cache, or perform the HTTP transaction and save the response to cache
         """
-        proxies = {**(self.proxies or {}), **(proxies or {})}
         if self.cache and not force_cache_stale:
             res = self.cache.get(preq, log, cache_key, max_cache_age)
             if res is not None:
