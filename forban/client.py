@@ -74,7 +74,7 @@ class Client:
         if frame.is_retry:
             force_cache_stale = True
             courtesy_sleep = timedelta(0)
-        req = self._build_request(url, **kwargs)
+        req = self.build_request(url, **kwargs)
         preq = self._prepare(req)
         log = LogEntry(preq, is_redirect=(_redirected_from is not None))
         res = self._fetch_response(
@@ -104,7 +104,10 @@ class Client:
         )
 
     @staticmethod
-    def _build_request(url: Requestable, **kwargs) -> Request:
+    def build_request(url: Requestable, **kwargs) -> Request:
+        """
+        Takes a `Requestable` and compiles it into a `requests.Request` object.
+        """
         if isinstance(url, Request):
             if kwargs:
                 # I'm putting this here to avoid unforeseen behaviour, but if it ever becomes a problem, could consider relaxing

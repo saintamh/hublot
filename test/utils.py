@@ -19,7 +19,7 @@ def dummy_prepared_request(client: Client, **kwargs):
         kwargs.setdefault('method', 'POST')
         if kwargs['method'] in ('POST', 'PUT'):
             kwargs.setdefault('data', b'This is my request data')
-    return client._prepare(client._build_request(url, **kwargs))  # pylint: disable=protected-access
+    return client._prepare(client.build_request(url, **kwargs))  # pylint: disable=protected-access
 
 
 def dummy_response(
