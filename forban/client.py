@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # standards
+from abc import ABC
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
@@ -22,9 +23,13 @@ from .version import FORBAN_VERSION
 MAX_REDIRECTS = 10
 
 
-# Type annotation for values that can be passed to the `request` method
-#
-Requestable = Union[str, Request]
+class Requestable(ABC):
+    """ Umbrella type for values that can be passed to the `request` method """
+
+Requestable.register(str)
+Requestable.register(Request)
+
+_Requestable = Union[Requestable, str, Request]  # because mypy doesn't understand ABC.register
 
 
 class Client:
@@ -55,7 +60,7 @@ class Client:
 
     def fetch(
         self,
-        url: Requestable,
+        url: _Requestable,
         courtesy_sleep: Optional[timedelta] = None,
         raise_for_status: bool = True,
         force_cache_stale: bool = False,
@@ -104,7 +109,7 @@ class Client:
         )
 
     @staticmethod
-    def build_request(url: Requestable, **kwargs) -> Request:
+    def build_request(url: _Requestable, **kwargs) -> Request:
         """
         Takes a `Requestable` and compiles it into a `requests.Request` object.
         """
