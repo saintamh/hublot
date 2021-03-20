@@ -2,6 +2,7 @@
 
 # standards
 from itertools import count
+import json
 from random import choices
 from string import ascii_letters
 
@@ -159,3 +160,34 @@ def test_decorator_on_client_created_within_function(reinstantiable_client, serv
         client = reinstantiable_client()
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
     assert fetch() == 'success after 2 failures'
+
+
+def test_parsing_html_as_json_is_a_scraper_error():
+    with pytest.raises(ScraperError):
+        json.loads('<html>')
+
+
+def test_nested_scraper_functions(client, server, unique_key):
+
+    # What should happen here:
+    #
+    #  1. the GET call in `inner()` fails, is retried, and so the call to `inner()` returns "success after 2 failures"
+    #
+    #  2. the GET call in `outer()` fails, and is retried; this does not force the inner call to be retried though -- that one
+    #     keeps being served from cache
+
+    @retry_on_scraper_error
+    def inner():
+        return 'inner: ' + client.get(f'{server}/fail-twice-then-succeed/{unique_key}-inner').text
+
+    @retry_on_scraper_error
+    def outer():
+        return [
+            inner(),
+            'outer: ' + client.get(f'{server}/fail-twice-then-succeed/{unique_key}-outer').text,
+        ]
+
+    assert outer() == [
+        'inner: success after 2 failures',
+        'outer: success after 2 failures',
+    ]
