@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from .cache import Cache, CacheKey
-from .client import Client, Requestable
+from .client import Client, Requestable, RequestableABC
 from .courtesy import CourtesySleep
 from .decorator import retry_on_scraper_error
 from .exceptions import ScraperError

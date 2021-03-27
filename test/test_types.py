@@ -4,10 +4,10 @@
 from requests import Request
 
 # forban
-from forban import Requestable
+from forban import RequestableABC
 
 
 def test_requestable_is_runtime_type():
-    """ `forban.Requestable` is not just a type annotation, it's a real class that can be used with `isinstance` """
-    assert isinstance('http://blah/', Requestable)
-    assert isinstance(Request('GET', 'http://blah/'), Requestable)
+    """ `forban.RequestableABC` is not a type annotation, it's an ABC class that can be used with `isinstance` """
+    assert isinstance('http://blah/', RequestableABC)
+    assert isinstance(Request('GET', 'http://blah/'), RequestableABC)
