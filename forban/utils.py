@@ -2,9 +2,13 @@
 
 # standards
 from http.cookiejar import CookiePolicy
+from typing import Callable, Dict, TypeVar
 
 # 3rd parties
 from requests import Response
+
+# forban
+from .exceptions import ScraperError
 
 
 class ForbanCookiePolicy(CookiePolicy):  # pragma: no cover, we don't care how this gets called, as long as it works
@@ -52,3 +56,19 @@ class MockResponse: # pragma: no cover -- again, as long as it works, we don't c
             if name in self.response.headers:
                 return [self.response.headers[name]]
         return failobj
+
+
+KeyType = TypeVar('KeyType')
+
+ValueType = TypeVar('ValueType')
+
+class LookupFailure(ScraperError):
+    pass
+
+def lookup(values: Dict[KeyType, ValueType]) -> Callable[[KeyType], ValueType]:
+    def _lookup(key: KeyType):
+        try:
+            return values[key]
+        except KeyError as error:
+            raise LookupFailure(repr(key)) from error
+    return _lookup
