@@ -45,22 +45,19 @@ def _compose_request_blob(
     for key, value in sorted(preq.headers.items()):
         write(f'{key}: {value}{EOL}')
     write(EOL)
-    content_length = int(preq.headers.get('Content-Length') or 0)
-    if preq.body is not None:
-        if content_length != len(preq.body):
+    if 'Content-Length' in preq.headers:
+        body = b'' if preq.body is None else preq.body
+        content_length = int(preq.headers['Content-Length'])
+        if content_length != len(body):
             # Don't write it out because we won't be able to read it back
-            raise Exception(f'body has {len(preq.body)} bytes but Content-Length is {content_length}')
-        if isinstance(preq.body, str):
+            raise Exception(f'body has {len(body)} bytes but Content-Length is {content_length}')
+        if isinstance(body, str):
             # `PreparedRequest.prepare_body` leaves `body` as a `str` if `data` was a dict
-            body_bytes = preq.body.encode('UTF-8')
+            body_bytes = body.encode('UTF-8')
         else:
-            body_bytes = preq.body
+            body_bytes = body
         output.write(body_bytes)
         write(EOL)
-    else:
-        if content_length > 0:
-            # Again, need to make sure Content-Length can reliably be used for parsing later
-            raise Exception(f'body is None but Content-Length is {content_length}')
     write(EOL)
 
 

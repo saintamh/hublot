@@ -78,6 +78,7 @@ def flask_app():
     @app.route('/echo', methods=['GET', 'POST'])
     def echo():
         return jsonify({
+            'method': request.method,
             'args': request.args,
             'files': {
                 key: storage.read().decode('UTF-8')

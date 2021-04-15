@@ -112,7 +112,15 @@ def test_cache_wont_save_get_request_with_content_length(client):
     response.request = preq
     with pytest.raises(Exception) as ex:
         client.cache.put(preq, LogEntry(preq), response)
-    assert 'body is None but Content-Length is 999' in str(ex)
+    assert 'body has 0 bytes but Content-Length is 999' in str(ex)
+
+
+def test_cache_can_handle_empty_post_request(client, server):
+    for _from_cache_unused in (False, True):
+        res = client.fetch(f'{server}/echo', data={})
+        obtained = res.json()
+        obtained.pop('headers')
+        assert obtained == {'method': 'POST', 'args': {}, 'files': {}, 'form': {}, 'json': None}
 
 
 def test_cant_pass_cache_kwargs_and_preinstantiated_cache(cache):

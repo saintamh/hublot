@@ -107,7 +107,7 @@ def test_post_data(client, server):
     res = client.post(f'{server}/echo', data={'a': 'b'})
     payload = res.json()
     payload.pop('headers')
-    assert payload == {'args': {}, 'files': {}, 'form': {'a':'b'}, 'json': None}
+    assert payload == {'method': 'POST', 'args': {}, 'files': {}, 'form': {'a':'b'}, 'json': None}
 
 
 def test_post_open_file(client, server):
@@ -116,6 +116,7 @@ def test_post_open_file(client, server):
     payload = res.json()
     payload.pop('headers')
     assert payload == {
+        'method': 'POST',
         'args': {},
         'files': {},
         'form': dummy_file.read_text('UTF-8'),
@@ -129,6 +130,7 @@ def test_post_open_file_as_form_field(client, server):
     payload = res.json()
     payload.pop('headers')
     assert payload == {
+        'method': 'POST',
         'args': {},
         'files': {},
         'form': {'a': dummy_file.read_text('UTF-8')},
@@ -142,6 +144,7 @@ def test_post_files(client, server):
     payload = res.json()
     payload.pop('headers')
     assert payload == {
+        'method': 'POST',
         'args': {},
         'files': {'f': dummy_file.read_text('UTF-8')},
         'form': {},
@@ -153,7 +156,7 @@ def test_post_json(client, server):
     res = client.post(f'{server}/echo', json={'a': 'b'})
     payload = res.json()
     payload.pop('headers')
-    assert payload == {'args': {}, 'files': {}, 'form': {}, 'json': {'a': 'b'}}
+    assert payload == {'method': 'POST', 'args': {}, 'files': {}, 'form': {}, 'json': {'a': 'b'}}
 
 
 def test_http_errors_are_raised(client, server):
