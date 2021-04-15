@@ -60,7 +60,7 @@ class Client:
     def cookies(self):
         return self.session.cookies
 
-    def fetch(
+    def fetch(  # pylint: disable=too-many-locals
         self,
         url: Requestable,
         courtesy_sleep: Optional[timedelta] = None,
@@ -70,6 +70,7 @@ class Client:
         cache_key: Optional[UserSpecifiedCacheKey] = None,
         max_cache_age: Optional[timedelta] = None,
         proxies: Optional[Dict[str, str]] = None,
+        verify: Optional[bool] = True,
         _redirected_from: Optional[Response] = None,
         **kwargs,
     ) -> Response:
@@ -93,6 +94,7 @@ class Client:
             cache_key,
             max_cache_age,
             proxies,
+            verify,
         )
         if res.from_cache:  # type: ignore[attr-defined]  # we add that attribute
             self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore[arg-type]
@@ -157,6 +159,7 @@ class Client:
         cache_key: Optional[UserSpecifiedCacheKey],
         max_cache_age: Optional[timedelta],
         proxies: Optional[Dict[str, str]],
+        verify: Optional[bool],
     ) -> Response:
         """
         Either read the Response from cache, or perform the HTTP transaction and save the response to cache
@@ -170,6 +173,7 @@ class Client:
             res = self.session.request(
                 allow_redirects=False,
                 proxies=proxies,
+                verify=verify,
                 **req.__dict__,
             )
         res.from_cache = False  # type: ignore[attr-defined]  # we add that attribute
