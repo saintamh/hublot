@@ -154,6 +154,10 @@ def flask_app():
         res.headers['Location'] = '/redirect/loop'
         return res
 
+    @app.route('/no-reason')
+    def no_reason():
+        return 'hello', '200 '  # <-- no 'reason' message after the '200'
+
     return app
 
 

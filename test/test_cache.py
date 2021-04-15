@@ -138,3 +138,10 @@ def test_from_cache_attribute(client, server):
     for from_cache in (False, True):
         res = client.fetch(f'{server}/hello')
         assert res.from_cache == from_cache
+
+
+def test_cache_can_handle_empty_http_reason(client, server):
+    for _from_cache_unused in (False, True):
+        res = client.fetch(f'{server}/no-reason')
+        assert res.reason == ''
+        assert res.text == 'hello'

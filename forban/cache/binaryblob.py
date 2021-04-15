@@ -90,7 +90,7 @@ def parse_binary_blob(data: bytes) -> Response:
     pos = 0
     _method_unused, url, pos = _parse_line(data, pos, r'^(\w+) (.+)$')
     _headers_unused, _body_unused, pos = _parse_message(data, pos)
-    status_code, reason, pos = _parse_line(data, pos, r'^HTTP (\d+) (.+)$')
+    status_code, reason, pos = _parse_line(data, pos, r'^HTTP (\d+) (.*)$')
     res = Response()
     res.status_code = int(status_code)
     res.reason = reason
