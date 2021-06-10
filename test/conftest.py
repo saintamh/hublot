@@ -170,6 +170,30 @@ def flask_app():
             res.set_cookie(key, 'ok')
             return res
 
+    @app.route('/bicaméral')
+    def bicameral():
+        raw_uri = request.environ['RAW_URI']
+        case = {
+            '/bicam%C3%A9ral': 'upper',
+            '/bicam%c3%a9ral': 'lower',
+            '/bicam%C3%A9ral?name=Zo%C3%A9': 'upper',
+            '/bicam%C3%A9ral?name=Zo%c3%a9': 'lower',
+        }[raw_uri]
+        return '%s[%s]' % (case, next(iter_numbers))
+
+    @app.route('/redirigé')
+    def redirige():
+        raw_uri = request.environ['RAW_URI']
+        case = {
+            '/redirig%C3%A9': 'upper',
+            '/redirig%c3%a9': 'lower',
+        }[raw_uri]
+        if case == 'upper':
+            res = make_response('Zzzwip', 302)
+            res.headers['Location'] = '/redirig%c3%a9'
+            return res
+        return 'lower'
+
     return app
 
 

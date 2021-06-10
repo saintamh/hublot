@@ -7,3 +7,4 @@ pytest==6.2.4
 pytest-cov==2.12.1
 pytest-mock==3.6.1
 types-Flask==1.1.0
+types-requests==0.1.9

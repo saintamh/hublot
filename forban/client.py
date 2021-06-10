@@ -2,14 +2,17 @@
 
 # standards
 from abc import ABC
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+import re
+from typing import Any, Dict, Optional, Set, Union
 from urllib.parse import urljoin
 
 # 3rd parties
 from requests import PreparedRequest, Request, Response, Session, TooManyRedirects
 from requests.cookies import MockRequest
+import urllib3.util.url
 
 # forban
 from .cache import Cache, CacheKey, UserSpecifiedCacheKey
@@ -82,22 +85,23 @@ class Client:
         if frame.is_retry:
             force_cache_stale = True
             courtesy_sleep = timedelta(0)
-        req = self.build_request(url, **kwargs)
-        preq = self._prepare(req)
-        log = LogEntry(preq, is_redirect=(_redirected_from is not None))
-        res = self._fetch_response(
-            req,
-            preq,
-            log,
-            courtesy_sleep,
-            force_cache_stale,
-            cache_key,
-            max_cache_age,
-            proxies,
-            verify,
-        )
-        if res.from_cache:  # type: ignore[attr-defined]  # we add that attribute
-            self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore[arg-type]
+        with patched_encode_invalid_chars():
+            req = self.build_request(url, **kwargs)
+            preq = self._prepare(req)
+            log = LogEntry(preq, is_redirect=(_redirected_from is not None))
+            res = self._fetch_response(
+                req,
+                preq,
+                log,
+                courtesy_sleep,
+                force_cache_stale,
+                cache_key,
+                max_cache_age,
+                proxies,
+                verify,
+            )
+            if res.from_cache:  # type: ignore[attr-defined]  # we add that attribute
+                self.session.cookies.extract_cookies(MockResponse(res), MockRequest(preq))  # type: ignore[arg-type]
         if _redirected_from:
             res.history = [*_redirected_from.history, _redirected_from]
         LOGGER.info('%s', log)
@@ -236,3 +240,32 @@ class Client:
 
     def post(self, url: str, data=None, **kwargs) -> Response:
         return self.fetch(url, method='POST', data=data, **kwargs)
+
+
+_encode_invalid_chars = urllib3.util.url._encode_invalid_chars  # pylint: disable=protected-access
+
+
+def _encode_invalid_chars_preserve_case(component: str, allowed_chars: Set[str], encoding: str = 'utf-8') -> str:
+    new = _encode_invalid_chars(component, allowed_chars, encoding=encoding)
+    if new != component:
+        # `urllib3`, which is used internally by `requests`, changes the casing of %xx escapes, always forcing them to uppercase.
+        # This means that if a server is set up such that when you ask for a URL with uppercase escapes it redirects you to the
+        # same URL with lowercase escapes, then `requests` is unable to fetch that page -- the URL in the redirect response
+        # 'location' will be re-uppercased, leading to a redirect loop. Here we work around that by chaging it back to lowercase.
+        #
+        # You could argue that the HTTP spec says %-escapes are case-insensitive, so it's the server described above that's
+        # buggy, but browsers have no problem fetching such a page, so I'd argue it's a `requests` bug.
+        #
+        new = re.sub(r'%[0-9a-fA-F]{2}', lambda m: m.group().lower(), new)
+    return new
+
+
+@contextmanager
+def patched_encode_invalid_chars():
+    # pylint: disable=protected-access
+    original = urllib3.util.url._encode_invalid_chars
+    urllib3.util.url._encode_invalid_chars = _encode_invalid_chars_preserve_case
+    try:
+        yield
+    finally:
+        urllib3.util.url._encode_invalid_chars = original

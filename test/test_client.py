@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 # 3rd parties
 import pytest
-from requests import HTTPError, TooManyRedirects
+import requests
 
 # forban
 from forban import Cache, Client, CourtesySleep
@@ -160,7 +160,7 @@ def test_post_json(client, server):
 
 
 def test_http_errors_are_raised(client, server):
-    with pytest.raises(HTTPError):
+    with pytest.raises(requests.HTTPError):
         client.get(f'{server}/fail-with-random-value')
 
 
@@ -198,5 +198,30 @@ def test_redirects_set_response_history(cache, server):
 
 def test_redirect_loop(client, server):
     # Make sure that the caching doesn't interfere with Requests' ability to detect redirect loops
-    with pytest.raises(TooManyRedirects):
+    with pytest.raises(requests.TooManyRedirects):
         client.fetch(f'{server}/redirect/loop')
+
+
+def test_client_preserves_casing_of_percent_escapes_in_path(client, server):
+    ref_upper = client.get(f'{server}/bicam%C3%A9ral').text
+    assert ref_upper.startswith('upper')
+    ref_lower = client.get(f'{server}/bicam%c3%a9ral').text
+    assert ref_lower.startswith('lower')
+    assert client.get(f'{server}/bicam%C3%A9ral').text == ref_upper
+    assert client.get(f'{server}/bicam%c3%a9ral').text == ref_lower
+
+
+def test_client_preserves_casing_of_percent_escapes_in_query(client, server):
+    ref_upper = client.get(f'{server}/bicam%C3%A9ral?name=Zo%C3%A9').text
+    assert ref_upper.startswith('upper')
+    ref_lower = client.get(f'{server}/bicam%C3%A9ral?name=Zo%c3%a9').text
+    assert ref_lower.startswith('lower')
+    assert client.get(f'{server}/bicam%C3%A9ral?name=Zo%C3%A9').text == ref_upper
+    assert client.get(f'{server}/bicam%C3%A9ral?name=Zo%c3%a9').text == ref_lower
+
+
+def test_client_can_fetch_from_server_that_redirects_based_on_escape_code_case(client, server):
+    url = f'{server}/redirig%C3%A9'
+    with pytest.raises(requests.TooManyRedirects):
+        requests.get(url)  # doesn't work with `requests`
+    assert client.get(url).text == 'lower'  # Forban can get around it though
