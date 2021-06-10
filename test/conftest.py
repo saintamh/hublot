@@ -159,6 +159,17 @@ def flask_app():
     def no_reason():
         return 'hello', '200 '  # <-- no 'reason' message after the '200'
 
+    @app.route('/self-redirect')
+    def self_redirect():
+        key = 'thisismycookie'
+        if request.cookies.get(key):
+            return 'ok'
+        else:
+            res = make_response('', 302)
+            res.headers['Location'] = '/self-redirect'
+            res.set_cookie(key, 'ok')
+            return res
+
     return app
 
 

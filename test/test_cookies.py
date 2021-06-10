@@ -70,3 +70,7 @@ def test_multiple_cookies_headers(reinstantiable_client, server):
             assert response_cookies == [('Set-Cookie', 'a=1'), ('Set-Cookie', 'b=2')]
         assert sorted(response.cookies.items()) == [('a', '1'), ('b', '2')]
         assert sorted(client.session.cookies.items()) == [('a', '1'), ('b', '2')]
+
+
+def test_response_that_redirects_to_same_url_with_cookie(client, server):
+    assert client.get(f'{server}/self-redirect').text == 'ok'
