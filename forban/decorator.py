@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 # standards
+from collections.abc import Iterable, Sized
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 import threading
 from time import sleep
-from types import GeneratorType
 from typing import Callable, Optional, Sequence
 
 # forban
@@ -53,7 +53,7 @@ def retry_on_scraper_error(
                         if attempt > 0:
                             frame.is_retry = True
                         payload = function(*args, **kwargs)
-                        if isinstance(payload, GeneratorType):
+                        if isinstance(payload, Iterable) and not isinstance(payload, Sized):
                             payload = list(payload)
                         return payload
                     except Exception as error:  # pylint: disable=broad-except
@@ -63,5 +63,6 @@ def retry_on_scraper_error(
                             sleep(delay)
                         else:
                             raise
+            raise Exception("can't reach here")
         return wrapper
     return make_wrapper
