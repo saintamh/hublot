@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 
 # 3rd parties
 from requests import PreparedRequest, Request, Response, Session, TooManyRedirects
-from requests.cookies import MockRequest
+from requests.cookies import MockRequest, RequestsCookieJar
 import urllib3.util.url
 
 # forban
@@ -60,7 +60,7 @@ class Client:
         self.user_agent = user_agent
 
     @property
-    def cookies(self):
+    def cookies(self) -> RequestsCookieJar:
         return self.session.cookies
 
     def fetch(  # pylint: disable=too-many-locals
