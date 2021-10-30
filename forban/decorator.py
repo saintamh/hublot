@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # standards
-from collections.abc import Iterable, Sized
+from collections.abc import Generator, Iterator, Sized
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
@@ -53,7 +53,7 @@ def retry_on_scraper_error(
                         if attempt > 0:
                             frame.is_retry = True
                         payload = function(*args, **kwargs)
-                        if isinstance(payload, Iterable) and not isinstance(payload, Sized):
+                        if isinstance(payload, (Iterator, Generator)) and not isinstance(payload, Sized):
                             payload = list(payload)
                         return payload
                     except Exception as error:  # pylint: disable=broad-except

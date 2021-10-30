@@ -8,6 +8,7 @@ from string import ascii_letters
 
 # 3rd parties
 import pytest
+import requests
 
 # forban
 from forban import ScraperError, retry_on_scraper_error
@@ -86,6 +87,35 @@ def test_if_scraper_returns_iterator_it_gets_consumed():
     def fetch():
         return (i for i in range(1, 4))
     assert fetch() == [1, 2, 3]
+
+
+def test_if_scraper_returns_map_it_gets_consumed():
+    @retry_on_scraper_error
+    def fetch():
+        return map(lambda x: x, range(1, 4))
+    assert fetch() == [1, 2, 3]
+
+
+def test_if_scraper_returns_filter_it_gets_consumed():
+    @retry_on_scraper_error
+    def fetch():
+        return filter(lambda x: x, range(1, 4))
+    assert fetch() == [1, 2, 3]
+
+
+def test_if_scraper_returns_dict_keys_it_doesnt_get_consumed():
+    @retry_on_scraper_error
+    def fetch():
+        return {1: 1, 2: 2, 3: 3}.keys()
+    assert isinstance(fetch(), type({}.keys()))  # you're confused, pylint: disable=isinstance-second-argument-not-valid-type
+
+
+def test_if_scraper_returns_requests_response_it_doesnt_get_turned_into_a_list():
+    # requests.Response is an example of an object that is iterable, but doesn't have a __len__
+    @retry_on_scraper_error
+    def fetch():
+        return requests.Response()
+    assert isinstance(fetch(), requests.Response)
 
 
 def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
