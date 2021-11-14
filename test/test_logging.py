@@ -3,8 +3,8 @@
 # standards
 import re
 
-# forban
-from forban import retry_on_scraper_error
+# hublot
+from hublot import retry_on_scraper_error
 
 
 def test_basic_logging(client, server, captured_logs):

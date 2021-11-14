@@ -7,11 +7,11 @@ from typing import Callable, Dict, TypeVar
 # 3rd parties
 from requests import Response
 
-# forban
+# hublot
 from .exceptions import ScraperError
 
 
-class ForbanCookiePolicy(CookiePolicy):  # pragma: no cover, we don't care how this gets called, as long as it works
+class HublotCookiePolicy(CookiePolicy):  # pragma: no cover, we don't care how this gets called, as long as it works
 
     netscape = True
     rfc2965 = False

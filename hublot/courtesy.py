@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 # 3rd parties
 from requests import PreparedRequest
 
-# forban
+# hublot
 from .logs import LogEntry
 
 

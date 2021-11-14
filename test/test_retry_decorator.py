@@ -10,8 +10,8 @@ from string import ascii_letters
 import pytest
 import requests
 
-# forban
-from forban import ScraperError, retry_on_scraper_error
+# hublot
+from hublot import ScraperError, retry_on_scraper_error
 
 
 def test_retry_decorator_no_exception(client, server):

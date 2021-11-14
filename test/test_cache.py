@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from requests import Response
 
-# forban
-from forban import Client
-from forban.cache.storage import DiskStorage
-from forban.logs import LogEntry
+# hublot
+from hublot import Client
+from hublot.cache.storage import DiskStorage
+from hublot.logs import LogEntry
 from .utils import assert_responses_equal, dummy_prepared_request, dummy_response
 
 

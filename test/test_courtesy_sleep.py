@@ -9,8 +9,8 @@ from itertools import combinations
 # 3rd parties
 import pytest
 
-# forban
-from forban import Client
+# hublot
+from hublot import Client
 from .utils import dummy_prepared_request, dummy_response
 
 

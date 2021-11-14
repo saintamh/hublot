@@ -9,7 +9,7 @@ import threading
 from time import sleep
 from typing import Callable, Optional, Sequence
 
-# forban
+# hublot
 from .exceptions import ScraperError
 from .logs import LOGGER
 

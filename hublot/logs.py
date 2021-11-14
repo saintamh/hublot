@@ -9,7 +9,7 @@ from typing import Optional, Union
 from requests import PreparedRequest
 
 
-LOGGER = logging.getLogger('forban')
+LOGGER = logging.getLogger('hublot')
 
 
 @dataclass(frozen=False)
@@ -51,7 +51,7 @@ class LogEntry:
 def basic_logging_config(level: Union[int, str] = 'INFO', propagate: bool = False):
     """
     Sets up logging for the common use case. Calls `logging.basicConfig`, lowers verbosity for the `urllib3` logger. If `propagate`
-    is False (the default), a new handler will be attached to `forban.LOGGER` that logs in a simple format to stderr, and does not
+    is False (the default), a new handler will be attached to `hublot.LOGGER` that logs in a simple format to stderr, and does not
     propagate log events to the root logger.
     """
     if not isinstance(level, int):

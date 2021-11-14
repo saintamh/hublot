@@ -63,7 +63,7 @@ class CacheKey:
         # NB we don't normalise the order of the `params` dict or `data` dict. If running in Python 3.6+, where dicts preserve
         # their insertion order, multiple calls from the same code, where the params are defined in the same order, will hit the
         # same cache key. In previous versions, maybe not, so in 3.5 and before params and body should be serialised before being
-        # sent to Forban.
+        # sent to Hublot.
         headers = sorted(
             (key.title(), value)
             for key, value in preq.headers.items()

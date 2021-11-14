@@ -14,13 +14,13 @@ from requests import PreparedRequest, Request, Response, Session, TooManyRedirec
 from requests.cookies import MockRequest, RequestsCookieJar
 import urllib3.util.url
 
-# forban
+# hublot
 from .cache import Cache, CacheKey, UserSpecifiedCacheKey
 from .courtesy import CourtesySleep
 from .decorator import SCRAPER_LOCAL
 from .logs import LOGGER, LogEntry
-from .utils import ForbanCookiePolicy, MockResponse
-from .version import FORBAN_VERSION
+from .utils import HublotCookiePolicy, MockResponse
+from .version import HUBLOT_VERSION
 
 
 MAX_REDIRECTS = 10
@@ -45,7 +45,7 @@ class Client:
         courtesy_sleep: Optional[Union[CourtesySleep, timedelta]] = timedelta(seconds=5),
         session: Optional[Session] = None,
         max_cache_age: Optional[timedelta] = None,
-        user_agent: str = f'forban/{FORBAN_VERSION}',
+        user_agent: str = f'hublot/{HUBLOT_VERSION}',
         cookies_enabled: bool = True,
         proxies: Optional[Dict[str, str]] = None,
     ):
@@ -54,7 +54,7 @@ class Client:
             courtesy_sleep = CourtesySleep(courtesy_sleep)  # malkovitch malkovitch
         self.courtesy_sleep = courtesy_sleep
         self.session = session or Session()
-        self.session.cookies.set_policy(ForbanCookiePolicy(cookies_enabled))
+        self.session.cookies.set_policy(HublotCookiePolicy(cookies_enabled))
         if proxies:
             self.session.proxies = proxies
         self.user_agent = user_agent

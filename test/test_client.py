@@ -9,9 +9,9 @@ from tempfile import TemporaryDirectory
 import pytest
 import requests
 
-# forban
-from forban import Cache, Client, CourtesySleep
-from forban.cache.storage import DiskStorage
+# hublot
+from hublot import Cache, Client, CourtesySleep
+from hublot.cache.storage import DiskStorage
 
 
 @pytest.mark.parametrize(
@@ -224,4 +224,4 @@ def test_client_can_fetch_from_server_that_redirects_based_on_escape_code_case(c
     url = f'{server}/redirig%C3%A9'
     with pytest.raises(requests.TooManyRedirects):
         requests.get(url)  # doesn't work with `requests`
-    assert client.get(url).text == 'lower'  # Forban can get around it though
+    assert client.get(url).text == 'lower'  # Hublot can get around it though

@@ -8,9 +8,9 @@ from itertools import count, product
 import pytest
 from requests import Request
 
-# forban
-from forban.cache import CacheKey
-from forban.logs import LogEntry
+# hublot
+from hublot.cache import CacheKey
+from hublot.logs import LogEntry
 from .utils import assert_responses_equal, dummy_prepared_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 

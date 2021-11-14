@@ -10,7 +10,7 @@ from typing import Iterable, Optional
 # 3rd parties
 from requests import Response
 
-# forban
+# hublot
 from .binaryblob import compose_binary_blob, parse_binary_blob
 from .key import CacheKey
 

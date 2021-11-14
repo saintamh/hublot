@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# forban
-from forban import Client
+# hublot
+from hublot import Client
 
 
 def test_cookies_are_saved(client, server):

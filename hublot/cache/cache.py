@@ -9,7 +9,7 @@ from typing import Optional, Union
 from requests import PreparedRequest, Response
 from requests.cookies import MockRequest
 
-# forban
+# hublot
 from ..logs import LogEntry
 from ..utils import MockResponse
 from .key import CacheKey, UserSpecifiedCacheKey

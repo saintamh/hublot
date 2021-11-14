@@ -9,8 +9,8 @@ from typing import Dict, Optional
 from requests import PreparedRequest, Request, Response
 from requests.structures import CaseInsensitiveDict
 
-# forban
-from forban import Client
+# hublot
+from hublot import Client
 
 
 def dummy_prepared_request(client: Client, **kwargs):

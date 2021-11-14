@@ -17,10 +17,10 @@ from flask import Flask, jsonify, make_response, request
 import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
-# forban
-from forban import Cache, Client, basic_logging_config, logger
-import forban.courtesy
-import forban.decorator
+# hublot
+from hublot import Cache, Client, basic_logging_config, logger
+import hublot.courtesy
+import hublot.decorator
 
 
 basic_logging_config(level='DEBUG')
@@ -60,7 +60,7 @@ def client(cache):
 def flask_app():
     # Yeah, we don't call these directly, but they still need names, pylint: disable=unused-variable
     # And yes, it's a bit long for a function, but it's still readable, pylint: disable=too-many-locals
-    app = Flask('forban-tests')
+    app = Flask('hublot-tests')
 
     @app.route('/hello')
     def hello():
@@ -214,14 +214,14 @@ def server():
 
 @pytest.fixture
 def mocked_courtesy_sleep(mocker):
-    mocker.patch('forban.courtesy.sleep')
-    return forban.courtesy.sleep
+    mocker.patch('hublot.courtesy.sleep')
+    return hublot.courtesy.sleep
 
 
 @pytest.fixture
 def mocked_sleep_on_retry(mocker):
-    mocker.patch('forban.decorator.sleep')
-    return forban.decorator.sleep
+    mocker.patch('hublot.decorator.sleep')
+    return hublot.decorator.sleep
 
 
 @pytest.fixture

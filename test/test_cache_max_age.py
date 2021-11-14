@@ -15,7 +15,7 @@ def _fetch_unique_number_then_move_clock_to_next_day(mocker, reinstantiable_clie
     now = datetime.now()
     client = reinstantiable_client()
     unique = client.get(f'{server}/unique-number').text
-    mocker.patch('forban.cache.storage.current_datetime', return_value=now + timedelta(days=1))
+    mocker.patch('hublot.cache.storage.current_datetime', return_value=now + timedelta(days=1))
     return unique
 
 
@@ -65,7 +65,7 @@ def test_cant_override_with_longer_age(mocker, reinstantiable_client, server):
     now = datetime.now()
     client = reinstantiable_client(max_age=timedelta(hours=12))
     unique = client.get(f'{server}/unique-number').text
-    mocker.patch('forban.cache.storage.current_datetime', return_value=now + timedelta(days=1))
+    mocker.patch('hublot.cache.storage.current_datetime', return_value=now + timedelta(days=1))
     # re-use the same client to ensure there's no pruning happening, that would render the test invalid
     assert unique != client.get(f'{server}/unique-number', max_cache_age=timedelta(days=2)).text
 
@@ -76,7 +76,7 @@ def test_cant_override_with_null_age(mocker, reinstantiable_client, server):
     now = datetime.now()
     client = reinstantiable_client(max_age=timedelta(hours=12))
     unique = client.get(f'{server}/unique-number').text
-    mocker.patch('forban.cache.storage.current_datetime', return_value=now + timedelta(days=1))
+    mocker.patch('hublot.cache.storage.current_datetime', return_value=now + timedelta(days=1))
     # again, re-use the same client to ensure there's no pruning
     assert unique != client.get(f'{server}/unique-number', max_cache_age=None).text
 
@@ -87,7 +87,7 @@ def test_cant_override_with_null_age(mocker, reinstantiable_client, server):
 )
 def test_max_age_applies_when_following_redirects(mocker, reinstantiable_client, server, redirect_step_is_cached):
     now = datetime.now()
-    mocker.patch('forban.cache.storage.current_datetime', lambda: now)
+    mocker.patch('hublot.cache.storage.current_datetime', lambda: now)
 
     @contextmanager
     def mocked_gzip_open(path, *rest, **kwargs):
@@ -95,7 +95,7 @@ def test_max_age_applies_when_following_redirects(mocker, reinstantiable_client,
             yield f
         utime(path, (now.timestamp(), now.timestamp()))
     _real_gzip_open = gzip.open
-    mocker.patch('forban.cache.storage.gzip.open', mocked_gzip_open)
+    mocker.patch('hublot.cache.storage.gzip.open', mocked_gzip_open)
 
     client = reinstantiable_client(
         cookies_enabled=False,  # disable cookies as they would invalidate the cache

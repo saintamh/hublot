@@ -3,14 +3,14 @@
 # standards
 import re
 
-# forban
-from forban import Client
+# hublot
+from hublot import Client
 
 
 def test_default_user_agent(server):
     client = Client()
     user_agent = client.get(f'{server}/echo').json()['headers']['User-Agent']
-    assert re.search(r'^forban/[\d\.]+$', user_agent), user_agent
+    assert re.search(r'^hublot/[\d\.]+$', user_agent), user_agent
 
 
 def test_user_agent_constructor_arg(server):
