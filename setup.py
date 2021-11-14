@@ -21,6 +21,7 @@ HUBLOT_VERSION = version_match.group(1)
 setuptools.setup(
     name='hublot',
     version=HUBLOT_VERSION,
+    description='A thin wrapper around Requests that adds caching and throttling',
     author='Hervé Saint-Amand',
     packages=setuptools.find_packages(),
     package_data={'hublot': ['py.typed']},
