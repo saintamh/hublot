@@ -3,6 +3,7 @@
 # standards
 from datetime import datetime, timedelta
 import gzip
+import logging
 from pathlib import Path
 import re
 from typing import Iterable, Optional
@@ -43,8 +44,12 @@ class DiskStorage(Storage):
             file_age = current_datetime() - datetime.fromtimestamp(file_path.stat().st_mtime)
             if file_age > max_age:
                 return None
-        with gzip.open(file_path, 'rb') as file_in:
-            return parse_binary_blob(file_in.read())
+        try:
+            with gzip.open(file_path, 'rb') as file_in:
+                return parse_binary_blob(file_in.read())
+        except gzip.BadGzipFile as error:
+            logging.error("Couldn't read %s: %s", file_path, error)
+            return None
 
     def write(self, key: CacheKey, response: Response) -> None:
         file_path = self._file_path(key)
