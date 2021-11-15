@@ -27,7 +27,7 @@ class Storage:  # pragma: no cover
     def iter_all_keys(self) -> Iterable[CacheKey]:
         raise NotImplementedError
 
-    def prune(self, max_age: timedelta):
+    def prune(self, max_age: timedelta) -> None:
         raise NotImplementedError
 
 
@@ -63,7 +63,7 @@ class DiskStorage(Storage):
             parts[-1] = re.sub(r'\.gz$', '', file_path.name)
             yield CacheKey.from_path_parts(parts)
 
-    def prune(self, max_age: timedelta):
+    def prune(self, max_age: timedelta) -> None:
         now = current_datetime()
         dirs_to_check = set()
         for file_path in self._iter_all_files():
@@ -86,6 +86,6 @@ class DiskStorage(Storage):
         return file_path
 
 
-def current_datetime():
+def current_datetime() -> datetime:
     # This is put in a separate function so that tests can patch that function
     return datetime.now()
