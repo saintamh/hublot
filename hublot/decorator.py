@@ -15,12 +15,19 @@ from .logs import LOGGER
 
 
 @dataclass
-class ThreadLocalData:
+class ThreadLocalStackFrame:
     is_retry: bool = False
 
 
-SCRAPER_LOCAL = threading.local()
-SCRAPER_LOCAL.stack = [ThreadLocalData()]
+class ThreadLocalStack(threading.local):
+
+    def __init__(self):
+        super().__init__()
+        # each thread will magically get a different stack
+        self.stack = [ThreadLocalStackFrame()]
+
+
+SCRAPER_LOCAL = ThreadLocalStack()
 
 
 def retry_on_scraper_error(
@@ -35,7 +42,7 @@ def retry_on_scraper_error(
 
     @contextmanager
     def scraper_stack_frame():
-        frame = ThreadLocalData()
+        frame = ThreadLocalStackFrame()
         SCRAPER_LOCAL.stack.append(frame)
         try:
             yield frame
