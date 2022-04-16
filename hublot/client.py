@@ -41,8 +41,8 @@ class Client:
 
     def __init__(
         self,
-        cache: Optional[Union[Cache, Path, str]] = None,
-        courtesy_sleep: Optional[Union[CourtesySleep, timedelta]] = timedelta(seconds=5),
+        cache: Union[Cache, Path, str, None] = None,
+        courtesy_sleep: Union[CourtesySleep, timedelta, None] = timedelta(seconds=5),
         session: Optional[Session] = None,
         max_cache_age: Optional[timedelta] = None,
         user_agent: str = f'hublot/{HUBLOT_VERSION}',

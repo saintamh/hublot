@@ -66,7 +66,7 @@ class Cache:
     @classmethod
     def load(
         cls,
-        cache: Optional[Union['Cache', Path, str]] = None,
+        cache: Union['Cache', Path, str, None] = None,
         max_age: Optional[timedelta] = None,
     ) -> Optional['Cache']:
         """
