@@ -25,7 +25,7 @@ setuptools.setup(
     description='A thin wrapper around Requests that adds caching and throttling',
     url='https://github.com/saintamh/hublot',
     author='Hervé Saint-Amand',
-    packages=['hublot'],
+    packages=['hublot', 'hublot.cache'],
     package_data={'hublot': ['py.typed']},
     install_requires=[
         'dataclasses>=0.8,<1; python_version<"3.7"',
