@@ -148,8 +148,9 @@ def test_from_cache_attribute(client, server):
         assert res.from_cache == from_cache
 
 
+@pytest.mark.skip('Flask 2 no longer lets us send a response without a reason')
 def test_cache_can_handle_empty_http_reason(client, server):
     for _from_cache_unused in (False, True):
-        res = client.fetch(f'{server}/no-reason')
+        res = client.fetch(f'{server}/no-reason', raise_for_status=False)
         assert res.reason == ''
         assert res.text == 'hello'

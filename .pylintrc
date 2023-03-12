@@ -1,6 +1,7 @@
 [MESSAGES CONTROL]
 
 disable=
+    consider-using-f-string,
     missing-docstring,
     no-else-return,  # an 'else' after a return can actually improve legibility
     too-few-public-methods,  # sometimes a class has one public method, still makes sense
@@ -41,9 +42,6 @@ max-args=10
 
 
 [BASIC]
-
-# We're cool with map, filter, input
-bad-functions=
 
 # Remove restrictions on name lengths
 argument-rgx=[a-z_][a-z0-9_]*$

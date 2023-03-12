@@ -77,6 +77,7 @@ def flask_app():
 
     @app.route('/echo', methods=['GET', 'POST'])
     def echo():
+        request_json = request.get_json(silent=True)
         return jsonify({
             'method': request.method,
             'args': request.args,
@@ -84,8 +85,8 @@ def flask_app():
                 key: storage.read().decode('UTF-8')
                 for key, storage in request.files.items()
             },
-            'form': request.data.decode('UTF-8') if request.data and not request.json else request.form,
-            'json': request.json,
+            'form': request.data.decode('UTF-8') if request.data and not request_json else request.form,
+            'json': request_json,
             'headers': dict(request.headers.items()),
         })
 
@@ -157,7 +158,8 @@ def flask_app():
 
     @app.route('/no-reason')
     def no_reason():
-        return 'hello', '200 '  # <-- no 'reason' message after the '200'
+        # Since upgrading to Flask 2 this is broken, Flask helpfully adds the "OK"
+        return 'hello', '200 '  # <-- no 'reason' message after the code
 
     @app.route('/self-redirect')
     def self_redirect():
