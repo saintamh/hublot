@@ -72,7 +72,7 @@ class DiskStorage(Storage):
                 file_path.unlink()
                 dirs_to_check.add(file_path.parent)
         for dir_path in dirs_to_check:
-            while not next(dir_path.iterdir(), None):
+            while dir_path != self.root_path and not next(dir_path.iterdir(), None):
                 dir_path.rmdir()
                 dir_path = dir_path.parent
 
