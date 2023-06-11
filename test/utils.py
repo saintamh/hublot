@@ -1,42 +1,46 @@
 #!/usr/bin/env python3
 
 # standards
-from io import BytesIO
 from itertools import combinations, product
 from typing import Dict, Optional
 
-# 3rd parties
-from requests import PreparedRequest, Request, Response
-from requests.structures import CaseInsensitiveDict
-
 # hublot
-from hublot import Client
+from hublot import HttpClient, Request, Response
+from hublot.compile import compile_request
+from hublot.datastructures import CompiledRequest, Headers
 
 
-def dummy_prepared_request(client: Client, **kwargs):
+def dummy_compiled_request(client: HttpClient, **kwargs) -> CompiledRequest:
     url = kwargs.pop('url', 'http://example.com/test')
     if not isinstance(url, Request):
         kwargs.setdefault('method', 'POST')
-        if kwargs['method'] in ('POST', 'PUT'):
+        if kwargs['method'] in ('POST', 'PUT') and 'json' not in kwargs:
             kwargs.setdefault('data', b'This is my request data')
-    return client._prepare(client.build_request(url, **kwargs))  # pylint: disable=protected-access
+    return compile_request(
+        client.cookies,
+        client.config,
+        url,
+        kwargs,
+    )
 
 
 def dummy_response(
-    preq: PreparedRequest,
+    creq: CompiledRequest,
+    from_cache: bool = False,
     status_code: int = 200,
     reason: str = 'OK',
     headers: Optional[Dict[str, str]] = None,
     data: bytes = b'This is my response data',
-):
-    res = Response()
-    res.request = preq
-    res.status_code = status_code
-    res.reason = reason
-    res.headers = CaseInsensitiveDict(headers or {})
-    res.url = preq.url  # type: ignore
-    res.raw = BytesIO(data)
-    return res
+) -> Response:
+    return Response(
+        request=creq,
+        from_cache=from_cache,
+        history=[],
+        status_code=status_code,
+        reason=reason,
+        headers=Headers(headers),
+        content=data,
+    )
 
 
 def iter_nonequal_pairs(equivalencies):
@@ -55,16 +59,3 @@ def iter_equal_pairs(equivalencies):
         if len(group) > 2:
             for elem_1, elem_2 in combinations(group, 2):
                 yield elem_1, elem_2
-
-
-def assert_responses_equal(res1, res2):
-    state1 = res1.__getstate__()
-    state2 = res2.__getstate__()
-    state1['request'] = state1['request'] and state1['request'].__dict__
-    state2['request'] = state2['request'] and state2['request'].__dict__
-    try:
-        assert state1 == state2
-    except AssertionError:  # pragma: no cover, if the tests pass then this won't get called
-        print(state1)
-        print(state2)
-        raise

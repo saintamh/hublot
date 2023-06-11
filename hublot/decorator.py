@@ -10,7 +10,7 @@ from time import sleep
 from typing import Callable, Optional, Sequence
 
 # hublot
-from .exceptions import ScraperError
+from .datastructures import HublotException
 from .logs import LOGGER
 
 
@@ -21,7 +21,7 @@ class ThreadLocalStackFrame:
 
 class ThreadLocalStack(threading.local):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # each thread will magically get a different stack
         self.stack = [ThreadLocalStackFrame()]
@@ -33,7 +33,7 @@ SCRAPER_LOCAL = ThreadLocalStack()
 def retry_on_scraper_error(
     no_parens_function: Optional[Callable] = None,
     *,
-    error_types: Sequence[type] = (),
+    error_types: Sequence[type] = (ValueError,),
     num_attempts: int = 5,
 ):
     if no_parens_function:
@@ -49,7 +49,7 @@ def retry_on_scraper_error(
         finally:
             SCRAPER_LOCAL.stack.pop()
 
-    error_types = (ScraperError, *error_types)
+    error_types = (HublotException, *error_types)
 
     def make_wrapper(function: Callable):
         @wraps(function)
@@ -70,6 +70,6 @@ def retry_on_scraper_error(
                             sleep(delay)
                         else:
                             raise
-            raise Exception("can't reach here")
+            raise AssertionError("can't reach here")
         return wrapper
     return make_wrapper

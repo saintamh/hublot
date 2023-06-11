@@ -2,16 +2,14 @@
 
 # standards
 from itertools import count
-import json
 from random import choices
 from string import ascii_letters
 
 # 3rd parties
 import pytest
-import requests
 
 # hublot
-from hublot import ScraperError, retry_on_scraper_error
+from hublot import HublotException, retry_on_scraper_error
 
 
 def test_retry_decorator_no_exception(client, server):
@@ -50,7 +48,7 @@ def test_retry_decorator_num_attempts_just_not_enough(client, server, unique_key
     @retry_on_scraper_error(num_attempts=2)
     def fetch():
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
-    with pytest.raises(ScraperError):
+    with pytest.raises(HublotException):
         fetch()
 
 
@@ -110,12 +108,15 @@ def test_if_scraper_returns_dict_keys_it_doesnt_get_consumed():
     assert isinstance(fetch(), type({}.keys()))  # you're confused, pylint: disable=isinstance-second-argument-not-valid-type
 
 
-def test_if_scraper_returns_requests_response_it_doesnt_get_turned_into_a_list():
-    # requests.Response is an example of an object that is iterable, but doesn't have a __len__
+def test_if_scraper_returns_custom_iterable_without_len_it_doesnt_get_turned_into_a_list():
+    class MyIterable:
+        def __iter__(self):
+            assert False, "this shouldn't get called"
+            yield from (1, 2, 3)
     @retry_on_scraper_error
     def fetch():
-        return requests.Response()
-    assert isinstance(fetch(), requests.Response)
+        return MyIterable()
+    assert isinstance(fetch(), MyIterable)
 
 
 def test_scraper_sleeps_increasingly_long_delays(mocked_sleep_on_retry):
@@ -190,11 +191,6 @@ def test_decorator_on_client_created_within_function(reinstantiable_client, serv
         client = reinstantiable_client()
         return client.get(f'{server}/fail-twice-then-succeed/{unique_key}').text
     assert fetch() == 'success after 2 failures'
-
-
-def test_parsing_html_as_json_is_a_scraper_error():
-    with pytest.raises(ScraperError):
-        json.loads('<html>')
 
 
 def test_nested_scraper_functions(client, server, unique_key):

@@ -18,8 +18,9 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # hublot
-from hublot import Cache, Client, basic_logging_config, logger
-import hublot.courtesy
+from hublot import HttpClient, basic_logging_config, logger
+from hublot.cache import load_cache
+import hublot.client
 import hublot.decorator
 
 
@@ -33,15 +34,15 @@ def reinstantiable_cache():
     cache object then re-create it, with the same parameters, as happens when you re-run a script.
     """
     with TemporaryDirectory() as temp_root:
-        yield lambda **kwargs: Cache.load(Path(temp_root), **kwargs)
+        yield lambda **kwargs: load_cache(Path(temp_root), **kwargs)
 
 
 @pytest.fixture
 def reinstantiable_client(reinstantiable_cache):
     """
-    A callable that can be called repeatedly to reinstantiate a Client with the same cache parameters.
+    A callable that can be called repeatedly to reinstantiate a HttpClient with the same cache parameters.
     """
-    yield lambda cookies_enabled=True, **kwargs: Client(
+    yield lambda cookies_enabled=True, **kwargs: HttpClient(
         cache=reinstantiable_cache(**kwargs),
         cookies_enabled=cookies_enabled,
     )
@@ -54,7 +55,7 @@ def cache(reinstantiable_cache):
 
 @pytest.fixture
 def client(cache):
-    yield Client(cache=cache)
+    yield HttpClient(cache=cache)
 
 
 def flask_app():
@@ -216,8 +217,8 @@ def server():
 
 @pytest.fixture
 def mocked_courtesy_sleep(mocker):
-    mocker.patch('hublot.courtesy.sleep')
-    return hublot.courtesy.sleep
+    mocker.patch('hublot.client.sleep')
+    return hublot.client.sleep
 
 
 @pytest.fixture

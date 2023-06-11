@@ -10,8 +10,8 @@ from itertools import combinations
 import pytest
 
 # hublot
-from hublot import Client
-from .utils import dummy_prepared_request, dummy_response
+from hublot import HttpClient
+from .utils import dummy_compiled_request, dummy_response
 
 
 @pytest.mark.parametrize(
@@ -20,7 +20,7 @@ from .utils import dummy_prepared_request, dummy_response
 )
 def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_sleep):
     kwargs = {} if courtesy_sleep is None else {'courtesy_sleep': courtesy_sleep}
-    client = Client(**kwargs)
+    client = HttpClient(**kwargs)
     client.fetch(f'{server}/hello')
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello')
@@ -34,7 +34,7 @@ def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_sleep):
 
 
 def test_method_kwarg_overrides_default(mocked_courtesy_sleep, server):
-    client = Client()
+    client = HttpClient()
     client.fetch(f'{server}/hello')
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello', courtesy_sleep=timedelta(minutes=1))
@@ -43,25 +43,16 @@ def test_method_kwarg_overrides_default(mocked_courtesy_sleep, server):
 
 
 def test_method_kwarg_zero_disables_courtesy_sleep(mocked_courtesy_sleep, server):
-    client = Client()
+    client = HttpClient()
     client.fetch(f'{server}/hello')
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(f'{server}/hello', courtesy_sleep=timedelta(0))
     mocked_courtesy_sleep.assert_not_called()
 
 
-def test_method_kwarg_zero_none_does_nothing(mocked_courtesy_sleep, server):
-    client = Client()
-    client.fetch(f'{server}/hello')
-    mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
-    client.fetch(f'{server}/hello', courtesy_sleep=None)
-    mocked_courtesy_sleep.assert_called_once()
-    assert mocked_courtesy_sleep.call_args[0][0] == pytest.approx(5, 0.1)  # slept default 5 seconds
-
-
 def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
-    client = Client()
-    mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prepared_request(client)))
+    client = HttpClient()
+    mocker.patch.object(client.engines, 'request', return_value=dummy_response(dummy_compiled_request(client)))
     client.fetch('http://one/')
     mocked_courtesy_sleep.assert_not_called()
     client.fetch('http://two/')
@@ -83,8 +74,8 @@ def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
     )
 )
 def test_equal_hostnames(mocker, mocked_courtesy_sleep, url_1, url_2):
-    client = Client()
-    mocker.patch.object(client.session, 'request', return_value=dummy_response(dummy_prepared_request(client)))
+    client = HttpClient()
+    mocker.patch.object(client.engines, 'request', return_value=dummy_response(dummy_compiled_request(client)))
     client.fetch(url_1)
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(url_2)

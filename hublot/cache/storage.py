@@ -8,10 +8,8 @@ from pathlib import Path
 import re
 from typing import Iterable, Optional
 
-# 3rd parties
-from requests import Response
-
 # hublot
+from ..datastructures import Response
 from .binaryblob import compose_binary_blob, parse_binary_blob
 from .key import CacheKey
 
@@ -33,7 +31,7 @@ class Storage:  # pragma: no cover
 
 class DiskStorage(Storage):
 
-    def __init__(self, root_path: Path):
+    def __init__(self, root_path: Path) -> None:
         self.root_path = root_path
 
     def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]:

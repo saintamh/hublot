@@ -6,8 +6,8 @@ from hashlib import md5
 import re
 from typing import Optional, Tuple, Union
 
-# 3rd parties
-from requests import PreparedRequest
+# hublot
+from ..datastructures import CompiledRequest
 
 
 UserSpecifiedCacheKey = Union['CacheKey', Tuple[str, ...], str]
@@ -59,20 +59,20 @@ class CacheKey:
         )
 
     @classmethod
-    def compute(cls, preq: PreparedRequest) -> 'CacheKey':
+    def compute(cls, creq: CompiledRequest) -> 'CacheKey':
         # NB we don't normalise the order of the `params` dict or `data` dict. If running in Python 3.6+, where dicts preserve
         # their insertion order, multiple calls from the same code, where the params are defined in the same order, will hit the
         # same cache key. In previous versions, maybe not, so in 3.5 and before params and body should be serialised before being
         # sent to Hublot.
         headers = sorted(
             (key.title(), value)
-            for key, value in preq.headers.items()
+            for key, value in creq.headers.items()
         )
         key = (
-            preq.method,
-            preq.url,
+            creq.method,
+            creq.url,
             headers,
-            preq.body,
+            creq.data,
         )
         # Shortening to 16 chars means it's easier to copy-paste, takes less space in the terminal, etc. Seems like a flimsy reason
         # for increasing the chances of a collision, but at 2^64 bits these chances are still comfortably negligible.

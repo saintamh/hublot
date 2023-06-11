@@ -15,7 +15,7 @@ def get_version() -> str:
         version_file.read_text('UTF-8'),
     )
     if not version_match:
-        raise Exception("Couldn't parse version.py")
+        raise ValueError("Couldn't parse version.py")
     return version_match.group(1)
 
 
@@ -28,6 +28,7 @@ setuptools.setup(
     packages=['hublot', 'hublot.cache'],
     package_data={'hublot': ['py.typed']},
     install_requires=[
+        'chardet>= 3.0.2,<5',  # version req copied from requests
         'dataclasses>=0.8,<1; python_version<"3.7"',
         'requests>=2.25,<3',
     ],

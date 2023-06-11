@@ -43,9 +43,9 @@ def test_logging_on_retry(client, server, unique_key, captured_logs):
     assert re.search(
         r'^'
         fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/{unique_key}\n'
-        'HTTPError: 500 .+ sleeping 1s\n'
+        'HttpError: 500 .+ sleeping 1s\n'
         fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/{unique_key}\n'
-        'HTTPError: 500 .+ sleeping 5s\n'
+        'HttpError: 500 .+ sleeping 5s\n'
         fr'\[\w\w\w/\w{{13}}\]          {server}/fail-twice-then-succeed/{unique_key}\n'
         r'$',
         captured_logs(),

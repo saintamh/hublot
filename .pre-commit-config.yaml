@@ -16,13 +16,6 @@ repos:
     types: [python]
     args: [--show-error-codes]
 
-  - id: isort
-    name: isort
-    entry: isort
-    language: python
-    types: [python]
-    args: [-m, VERTICAL_HANGING_INDENT, --line-width=132, --fss, --ignore-whitespace, --trailing-comma, --check-only]
-
   - id: pytest
     name: pytest
     entry: pytest

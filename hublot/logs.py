@@ -5,16 +5,15 @@ from dataclasses import dataclass
 import logging
 from typing import Optional, Union
 
-# 3rd parties
-from requests import PreparedRequest
-
+# hublot
+from .datastructures import CompiledRequest
 
 LOGGER = logging.getLogger('hublot')
 
 
 @dataclass(frozen=False)
 class LogEntry:
-    preq: PreparedRequest
+    creq: CompiledRequest
     is_redirect: bool = False
     cache_key_str: Optional[str] = None
     cached: Optional[bool] = None
@@ -32,12 +31,11 @@ class LogEntry:
             yield '         '
         if self.is_redirect:
             yield '-> '
-        pr = self.preq
-        yield pr.url
-        if pr.method != 'GET':
-            yield f' [{pr.method}'
+        yield self.creq.url
+        if self.creq.method != 'GET':
+            yield f' [{self.creq.method}'
             try:
-                length = int(pr.headers.get('Content-Length', 0))
+                length = int(self.creq.headers.get('Content-Length', '0'))
             except ValueError:
                 length = 0
             if length > 0:
