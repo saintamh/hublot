@@ -5,6 +5,7 @@ from typing import List, Literal, Sequence, Type, Union
 
 # hublot
 from .base import Engine
+from .curlcmd import CurlCmdEngine
 from .pool import EnginePool
 from .pycurl import PyCurlEngine
 from .register import ALL_ENGINES, register_engine

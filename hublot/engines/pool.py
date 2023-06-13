@@ -13,6 +13,9 @@ class EnginePool(Engine):
     def __init__(self, engines: list[Engine]):
         self.engines = engines
 
+    def short_code(self) -> str:
+        return self.engines[0].short_code()
+
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         try:
             return self.engines[0].request(creq, config)

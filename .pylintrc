@@ -5,8 +5,10 @@ disable=
     consider-using-f-string,
     missing-docstring,
     no-else-return,  # an 'else' after a return can actually improve legibility
+    redefined-builtin,
     too-few-public-methods,  # sometimes a class has one public method, still makes sense
     too-many-instance-attributes,  # we like dataclasses
+    use-dict-literal,
 
 
 [REPORTS]

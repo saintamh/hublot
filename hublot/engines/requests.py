@@ -26,6 +26,9 @@ class RequestsEngine(Engine):
         # let hublot.HttpClient manage cookies
         self.session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
 
+    def short_code(self) -> str:
+        return 'rq'
+
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         try:
             with patched_encode_invalid_chars():

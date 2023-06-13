@@ -69,7 +69,7 @@ def _compile_request_data(req: Request, headers: Headers) -> Optional[bytes]:
         raise TypeError('Request cannot have both `data` and `json` set')
     if req.json is not None:
         headers.setdefault('Content-Type', 'application/json')
-        data = json.dumps(req.json)
+        data = json.dumps(req.json, separators=(',', ':'))
     elif data is not None and not isinstance(data, (str, bytes)):
         headers.setdefault('Content-Type', 'application/x-www-form-urlencoded')
         data = urlencode(data)
@@ -77,7 +77,13 @@ def _compile_request_data(req: Request, headers: Headers) -> Optional[bytes]:
         if not isinstance(data, bytes):
             # We always encode as UTF-8. If another encoding is desired, the data should be pre-compiled to bytes by the caller
             data = data.encode('UTF-8')
-        headers.setdefault('Content-Length', str(len(data)))
+        # We set a default content-type when uploading data. This is what Curl does, in fact I couldn't find a way of disabling
+        # that.
+        headers.setdefault('Content-Type', 'application/x-www-form-urlencoded')
+    if data is not None or (req.method and req.method.upper() not in ('HEAD', 'GET')):
+        # We set a Content-Length header even if `data` is None. This is what Requests does (in `prepare_content_length`), so for
+        # consistency across engines we do the same.
+        headers.setdefault('Content-Length', str(len(data or b'')))
     return data
 
 

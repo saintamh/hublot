@@ -11,6 +11,7 @@ import pytest
 # hublot
 from hublot import Request
 from hublot.cache import CacheKey
+from hublot.config import Config
 from hublot.logs import LogEntry
 from .utils import dummy_compiled_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
@@ -148,8 +149,8 @@ EQUIVALENCIES = [
     iter_nonequal_pairs(EQUIVALENCIES),
 )
 def test_unique_keys(client, config_1, config_2):
-    key = CacheKey.compute(dummy_compiled_request(client, **config_1))
-    other_key = CacheKey.compute(dummy_compiled_request(client, **config_2))
+    key = CacheKey.compute(dummy_compiled_request(client, **config_1), Config())
+    other_key = CacheKey.compute(dummy_compiled_request(client, **config_2), Config())
     assert key != other_key
 
 
@@ -170,8 +171,8 @@ def test_unique_requests(client, config_1, config_2):
     iter_equal_pairs(EQUIVALENCIES),
 )
 def test_equivalent_keys(client, config_1, config_2):
-    key_1 = CacheKey.compute(dummy_compiled_request(client, **config_1))
-    key_2 = CacheKey.compute(dummy_compiled_request(client, **config_2))
+    key_1 = CacheKey.compute(dummy_compiled_request(client, **config_1), Config())
+    key_2 = CacheKey.compute(dummy_compiled_request(client, **config_2), Config())
     print(dummy_compiled_request(client, **config_1))
     print(dummy_compiled_request(client, **config_2))
     assert key_1 == key_2, (config_1, config_2)
@@ -309,3 +310,25 @@ def test_cache_key_of_unknown_class(client):
             'http://whatever/',
             cache_key=MyRandoClass(),
         )
+
+
+def test_headers_ignored_by_cache(client):
+    key1 = CacheKey.compute(
+        dummy_compiled_request(client, headers={'Accept': 'pudding', 'Reject': 'asparagus'}),
+        Config(),
+    )
+    key2 = CacheKey.compute(
+        dummy_compiled_request(client, headers={'Accept': 'pudding', 'Reject': 'broccoli'}),
+        Config(),
+    )
+    assert key1 != key2
+
+    key1 = CacheKey.compute(
+        dummy_compiled_request(client, headers={'Accept': 'pudding', 'Reject': 'asparagus'}),
+        Config(headers_ignored_by_cache=['Reject']),
+    )
+    key2 = CacheKey.compute(
+        dummy_compiled_request(client, headers={'Accept': 'pudding', 'Reject': 'broccoli'}),
+        Config(headers_ignored_by_cache=['Reject']),
+    )
+    assert key1 == key2

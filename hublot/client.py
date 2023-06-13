@@ -36,8 +36,8 @@ class HttpClient:
         **config_kwargs,
     ) -> None:
         self.config = Config(**config_kwargs)
-        self.cache = load_cache(cache, self.config.max_cache_age)
-        self.engines = load_engine_pool(engines)
+        self.cache = load_cache(cache, self.config)
+        self.engine = load_engine_pool(engines)
         self.cookies = RequestsCookieJar()
         self.last_request_per_host: Dict[str, float] = {}
 
@@ -88,7 +88,7 @@ class HttpClient:
             config.courtesy_sleep = timedelta(0)
         creq = compile_request(self.cookies, config, url, request_kwargs)
         log = LogEntry(creq, is_redirect)
-        res = self._fetch_response(cache_key, config, creq, is_redirect, log)
+        res = self._fetch_response(cache_key, creq, config, is_redirect, log)
         if config.cookies_enabled:
             get_cookies_from_response(self.cookies, res)
         LOGGER.info('%s', log)
@@ -97,8 +97,8 @@ class HttpClient:
     def _fetch_response(
         self,
         cache_key: Optional[UserSpecifiedCacheKey],
-        config: Config,
         creq: CompiledRequest,
+        config: Config,
         is_redirect: bool,
         log: LogEntry,
     ) -> Response:
@@ -106,15 +106,16 @@ class HttpClient:
         Either read the Response from cache, or perform the HTTP transaction and save the response to cache
         """
         if self.cache and not config.force_cache_stale:
-            res = self.cache.get(creq, log, config.max_cache_age, cache_key)
+            res = self.cache.get(creq, log, config, cache_key)
             if res is not None:
                 res.from_cache = True
                 return res
         with self._sleep_if_needed(config, creq, is_redirect, log):
-            res = self.engines.request(creq, config)
+            log.engine_short_code = self.engine.short_code()
+            res = self.engine.request(creq, config)
         assert not res.from_cache  # would be an engine bug
         if self.cache:
-            self.cache.put(creq, log, res, cache_key)
+            self.cache.put(creq, log, res, config, cache_key)
         return res
 
     @contextmanager

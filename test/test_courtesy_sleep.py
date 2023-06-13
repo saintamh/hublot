@@ -52,7 +52,7 @@ def test_method_kwarg_zero_disables_courtesy_sleep(mocked_courtesy_sleep, server
 
 def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
     client = HttpClient()
-    mocker.patch.object(client.engines, 'request', return_value=dummy_response(dummy_compiled_request(client)))
+    mocker.patch.object(client.engine, 'request', return_value=dummy_response(dummy_compiled_request(client)))
     client.fetch('http://one/')
     mocked_courtesy_sleep.assert_not_called()
     client.fetch('http://two/')
@@ -75,7 +75,7 @@ def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
 )
 def test_equal_hostnames(mocker, mocked_courtesy_sleep, url_1, url_2):
     client = HttpClient()
-    mocker.patch.object(client.engines, 'request', return_value=dummy_response(dummy_compiled_request(client)))
+    mocker.patch.object(client.engine, 'request', return_value=dummy_response(dummy_compiled_request(client)))
     client.fetch(url_1)
     mocked_courtesy_sleep.assert_not_called()  # 1st request, no sleep
     client.fetch(url_2)

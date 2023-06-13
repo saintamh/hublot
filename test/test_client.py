@@ -94,20 +94,6 @@ def test_custom_courtesy_sleep(mocked_courtesy_sleep, server):
     assert delay == pytest.approx(120, 0.1)
 
 
-def test_post_data(client, server):
-    res = client.post(f'{server}/echo', data={'a': 'b'})
-    payload = res.json()
-    payload.pop('headers')
-    assert payload == {'method': 'POST', 'args': {}, 'files': {}, 'form': {'a':'b'}, 'json': None}
-
-
-def test_post_json(client, server):
-    res = client.post(f'{server}/echo', json={'a': 'b'})
-    payload = res.json()
-    payload.pop('headers')
-    assert payload == {'method': 'POST', 'args': {}, 'files': {}, 'form': {}, 'json': {'a': 'b'}}
-
-
 def test_http_errors_are_raised(client, server):
     with pytest.raises(HttpError):
         client.get(f'{server}/fail-with-random-value')

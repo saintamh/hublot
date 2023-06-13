@@ -14,6 +14,12 @@ class Engine(ABC):
     id: ClassVar[str]
 
     @abstractmethod
+    def short_code(self) -> str:
+        """
+        Returns a two-letter code that will identify this engine in the logs
+        """
+
+    @abstractmethod
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         """
         Perform one HTTP request, and return the response from the server, or raise an exception.

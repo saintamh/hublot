@@ -20,6 +20,7 @@ from werkzeug.serving import make_server  # installed transitively by Flask
 # hublot
 from hublot import HttpClient, basic_logging_config, logger
 from hublot.cache import load_cache
+from hublot.engines.register import ALL_ENGINES
 import hublot.client
 import hublot.decorator
 
@@ -53,6 +54,11 @@ def cache(reinstantiable_cache):
     yield reinstantiable_cache()
 
 
+@pytest.fixture(params=sorted(ALL_ENGINES.keys()))
+def engines(request):
+    yield (request.param,)
+
+
 @pytest.fixture
 def client(cache):
     yield HttpClient(cache=cache)
@@ -76,20 +82,20 @@ def flask_app():
     def unique_number():
         return str(next(iter_numbers))
 
-    @app.route('/echo', methods=['GET', 'POST'])
+    @app.route('/echo', methods=['GET', 'POST', 'SLURP'])
     def echo():
-        request_json = request.get_json(silent=True)
-        return jsonify({
-            'method': request.method,
-            'args': request.args,
-            'files': {
-                key: storage.read().decode('UTF-8')
-                for key, storage in request.files.items()
-            },
-            'form': request.data.decode('UTF-8') if request.data and not request_json else request.form,
-            'json': request_json,
-            'headers': dict(request.headers.items()),
-        })
+        return jsonify(
+            {
+                "method": request.method,
+                "args": request.args,
+                "headers": dict(request.headers.items()),
+                "data": "".join(chr(b) if 0x20 < b < 0x7E and chr(b) != r"\\" else r"\x%02x" % b for b in request.get_data()),
+            }
+        )
+
+    @app.route('/bytes', methods=['GET'])
+    def bytes():
+        return b'\x00' * int(request.args['length'])
 
     @app.route('/fail-with-random-value')
     def fail_with_random_value():

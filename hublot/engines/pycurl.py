@@ -22,12 +22,12 @@ LOGGER = logging.getLogger(__name__)
 
 RE_STATUS = re.compile(
     r'^\s* HTTP/\d+(?:\.\d+)? \s+ (\d\d\d) \s* (?: (\S.+?) \s* )? $',
-    flags=re.X,
+    flags=re.M|re.X,
 )
 
 RE_HEADER = re.compile(
     r'^\s* ([^:]+?) \s*:\s* (.+?) \s*$',
-    flags=re.X,
+    flags=re.M|re.X,
 )
 
 
@@ -37,6 +37,9 @@ class PyCurlEngine(Engine):
 
     def __init__(self) -> None:
         self.curl: Any = pycurl.Curl()  # pylint: disable=c-extension-no-member
+
+    def short_code(self) -> str:
+        return 'pc'
 
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         c = self.curl
@@ -51,8 +54,7 @@ class PyCurlEngine(Engine):
             ],
         )
         if creq.data is not None:
-            c.setopt(c.READFUNCTION, BytesIO(creq.data).read)
-            c.setopt(c.POSTFIELDSIZE, len(creq.data))
+            c.setopt(c.POSTFIELDS, creq.data)
 
         if config.proxies:
             scheme = urlparse(creq.url).scheme
@@ -61,6 +63,9 @@ class PyCurlEngine(Engine):
                 c.setopt(c.PROXY, proxy)
 
         c.setopt(c.ACCEPT_ENCODING, '')  # accept all curl-supported encodings
+        c.setopt(c.TIMEOUT, config.timeout)
+        c.setopt(c.SSL_VERIFYHOST, 1 if config.verify else 0)
+        c.setopt(c.SSL_VERIFYPEER, 1 if config.verify else 0)
 
         headers = Headers()
         status_code: list[int] = []

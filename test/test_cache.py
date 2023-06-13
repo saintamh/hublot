@@ -2,7 +2,6 @@
 
 # standards
 from dataclasses import replace
-from datetime import timedelta
 from pathlib import Path
 from typing import Iterable, Tuple
 
@@ -53,13 +52,13 @@ def test_client_caching(mocker, reinstantiable_client) -> None:
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
         res = replace(res, from_cache=False)
-        request = mocker.patch.object(client.engines, 'request', return_value=res)
+        request = mocker.patch.object(client.engine, 'request', return_value=res)
         assert client.fetch(**req) == res
         request.assert_called_once()
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
         res = replace(res, from_cache=True)
-        request = mocker.patch.object(client.engines, 'request', return_value=res)
+        request = mocker.patch.object(client.engine, 'request', return_value=res)
         assert client.fetch(**req) == res
         request.assert_not_called()
 
@@ -121,13 +120,7 @@ def test_cache_can_handle_empty_post_request(client, server) -> None:
         res = client.fetch(f'{server}/echo', data={})
         obtained = res.json()
         obtained.pop('headers')
-        assert obtained == {'method': 'POST', 'args': {}, 'files': {}, 'form': {}, 'json': None}
-
-
-def test_cant_pass_cache_kwargs_and_preinstantiated_cache(cache) -> None:
-    with pytest.raises(Exception) as ex:
-        HttpClient(cache=cache, max_cache_age=timedelta(10))
-    assert "can't specify a max_age" in str(ex)
+        assert obtained == {'method': 'POST', 'args': {}, 'data': ''}
 
 
 def test_cache_can_be_specified_as_path() -> None:
