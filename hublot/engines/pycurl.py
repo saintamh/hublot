@@ -12,7 +12,7 @@ import pycurl
 
 # hublot
 from ..config import Config
-from ..datastructures import CompiledRequest, Headers, Response
+from ..datastructures import CompiledRequest, ConnectionError, Headers, HublotException, Response
 from .base import Engine
 from .register import register_engine
 
@@ -74,7 +74,14 @@ class PyCurlEngine(Engine):
         c.setopt(c.HEADERFUNCTION, lambda line: self.handle_header_line(headers, status_code, reason, line))
         output_bytes = BytesIO()
         c.setopt(c.WRITEFUNCTION, output_bytes.write)
-        c.perform()
+        try:
+            c.perform()
+        except pycurl.error as error:  # pylint: disable=c-extension-no-member
+            error_code, message = error.args
+            if error_code == 6:
+                raise ConnectionError(message) from error
+            else:
+                raise HublotException() from error
 
         return Response(
             request=creq,
@@ -102,13 +109,13 @@ class PyCurlEngine(Engine):
             if match:
                 status_code.append(int(match[1]))
                 reason.append(match[2])
-            else:
+            else:  # pragma: no cover
                 LOGGER.warning('Malformed status line: %r', line)
         else:
             match = RE_HEADER.match(line)
             if match:
                 headers.add(match[1], match[2])
-            else:
+            else:  # pragma: no cover
                 LOGGER.warning('Malformed header line: %r', line)
 
 

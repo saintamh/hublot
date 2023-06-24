@@ -70,6 +70,6 @@ def retry_on_scraper_error(
                             sleep(delay)
                         else:
                             raise
-            raise AssertionError("can't reach here")
+            raise AssertionError("can't reach here")  # pragma: no cover
         return wrapper
     return make_wrapper

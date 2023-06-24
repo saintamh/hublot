@@ -4,7 +4,9 @@ from .cache import Cache, CacheKey
 from .client import HttpClient
 from .datastructures import (
     CharsetDetectionFailure,
+    ConnectionError,
     HttpError,
+    Headers,
     HublotException,
     Request,
     Requestable,

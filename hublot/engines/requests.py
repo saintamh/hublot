@@ -4,7 +4,7 @@
 from contextlib import contextmanager
 from http.cookiejar import DefaultCookiePolicy
 import re
-from typing import Set, Union
+from typing import Set
 
 # 3rd parties
 import requests
@@ -12,7 +12,7 @@ import urllib3.util.url
 
 # hublot
 from ..config import Config
-from ..datastructures import CompiledRequest, Headers, HublotException, Response
+from ..datastructures import CompiledRequest, ConnectionError, Headers, HublotException, Response
 from .base import Engine
 from .register import register_engine
 
@@ -46,27 +46,14 @@ class RequestsEngine(Engine):
                     from_cache=False,
                     history=[],
                     status_code=rres.status_code,
-                    reason=_decode_reason(rres.reason),
+                    reason=rres.reason,
                     headers=Headers(rres.raw._fp.headers),  # pylint: disable=protected-access
                     content=rres.content,
                 )
+        except requests.exceptions.ConnectionError as error:
+            raise ConnectionError(error) from error
         except requests.exceptions.RequestException as error:
             raise HublotException(error) from error
-
-
-def _decode_reason(reason: Union[str, bytes]) -> str:
-    if isinstance(reason, bytes):
-        # Code and comment copied from `requests.models`:
-        #
-        #     We attempt to decode utf-8 first because some servers choose to localize their reason strings. If the string isn't
-        #     utf-8, we fall back to iso-8859-1 for all other encodings. (See PR #3538)
-        try:
-            return reason.decode('UTF-8')
-        except UnicodeDecodeError:
-            return reason.decode('ISO-8859-1')
-    else:
-        return reason
-
 
 
 _encode_invalid_chars = urllib3.util.url._encode_invalid_chars  # type: ignore  # pylint: disable=protected-access

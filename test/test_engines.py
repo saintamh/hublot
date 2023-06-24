@@ -4,7 +4,7 @@
 import pytest
 
 # hublot
-from hublot import HttpClient, Request
+from hublot import ConnectionError, HttpClient, Request
 
 
 @pytest.mark.parametrize(
@@ -95,3 +95,16 @@ def test_long_response(engines, server) -> None:
     length = 12*1024*1024
     res = client.fetch(f'{server}/bytes', params={'length': length})
     assert res.content == b'\x00' * length
+
+
+@pytest.mark.skip('Need proxy servers to test against (both HTTP and HTTPS, ideally)')
+def test_proxies(engines, server) -> None:
+    client = HttpClient(engines=engines)
+    res = client.fetch('http://hublot.test/', proxies={'http': server})
+    assert res.content == ''
+
+
+def test_unknown_hostname(engines) -> None:
+    client = HttpClient(engines=engines)
+    with pytest.raises(ConnectionError):
+        client.get('http://thishostdoesnotexist.test/')

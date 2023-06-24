@@ -9,13 +9,20 @@ from urllib.parse import urlparse
 
 # hublot
 from ..config import Config
-from ..datastructures import CompiledRequest, Headers, Response, HublotException
+from ..datastructures import CompiledRequest, ConnectionError, Headers, Response, HublotException
 from .base import Engine
 from .pycurl import RE_HEADER, RE_STATUS
 from .register import register_engine
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+class CurlCmdEngineError(HublotException):
+    """
+    These exceptions indicate problems that are outside of HTTP errors -- unable to invoke the `curl` command, or to parse its
+    output. This would be a bug or a system setup problem.
+    """
 
 
 class CurlCmdEngine(Engine):
@@ -32,11 +39,17 @@ class CurlCmdEngine(Engine):
             capture_output=True,
             check=False,
         )
-        if curl.returncode != 0:
-            raise HublotException('curl: ' + curl.stderr.decode('UTF-8'))
+        if curl.returncode != 0:  # pragma: no cover
+            output = curl.stderr.decode('UTF-8')
+            message_match = re.search(fr'curl: \({curl.returncode}\) (.+)', output)
+            message = message_match[1] if message_match else None
+            if curl.returncode == 6:
+                raise ConnectionError(message or output)
+            else:
+                raise HublotException(output)
 
         headers_match = re.search(br'\r?\n\r?\n', curl.stdout)
-        if not headers_match:
+        if not headers_match:  # pragma: no cover
             raise Exception('Failed to find headers in curl output')
         headers_str = curl.stdout[:headers_match.start()].decode('ISO-8859-1')
 
@@ -76,7 +89,7 @@ class CurlCmdEngine(Engine):
     @staticmethod
     def _parse_status_line(headers_str: str) -> Tuple[int, Optional[str], str]:
         match = RE_STATUS.search(headers_str)
-        if not match:
+        if not match:  # pragma: no cover
             raise HublotException('Malformed headers')
         return int(match[1]), match[2], headers_str[match.end():]
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 import json
 from typing import (
     # We use the title-cased Dict, List and Tuple for backwards compat with pythons <3.9
+    Any,
     Dict,
     Iterator,
     List,
@@ -51,7 +52,7 @@ class Headers:
         return bool(self._dict)
 
     def __contains__(self, key: str) -> bool:
-        return key.lower() in self._dict
+        return key.title() in self._dict
 
     def __getitem__(self, key: str) -> str:
         """
@@ -71,13 +72,13 @@ class Headers:
         return '; '.join(value_list)
 
     def get_all(self, key: str, default: Sequence[str] = ()) -> Sequence[str]:
-        value_list = self._dict.get(key.lower())
+        value_list = self._dict.get(key.title())
         if value_list is None:
             return default
         return [value for _raw_key_unused, value in value_list]
 
     def add(self, key: str, value: str) -> None:
-        self._dict.setdefault(key.lower(), []).append((key, value))
+        self._dict.setdefault(key.title(), []).append((key, value))
 
     __setitem__ = add
 
@@ -191,7 +192,10 @@ class Response:
             raise CharsetDetectionFailure()
         return self.content.decode(encoding)
 
-    def json(self, **kwargs) -> JsonValue:
+    # NB `json` could have `JsonValue` as its return type, but then it means all client code needs to perform type checks on the
+    # returned value (e.g. assert it's a dict etc). Most clients know what the data is and just want to get on with it. So we make
+    # it Any. Clients can still do manual type checks if they want.
+    def json(self, **kwargs) -> Any:
         return json.loads(self.text, **kwargs)
 
     def raise_for_status(self) -> None:
@@ -244,4 +248,8 @@ class TooManyRedirects(HublotException):
 
 
 class CharsetDetectionFailure(HublotException):
+    pass
+
+
+class ConnectionError(HublotException):
     pass

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # standards
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 import gzip
 import logging
@@ -14,19 +15,23 @@ from .binaryblob import compose_binary_blob, parse_binary_blob
 from .key import CacheKey
 
 
-class Storage:  # pragma: no cover
+class Storage(ABC):  # pragma: no-cover
 
+    @abstractmethod
     def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]:
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def write(self, key: CacheKey, response: Response) -> None:
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def iter_all_keys(self) -> Iterable[CacheKey]:
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def prune(self, max_age: timedelta) -> None:
-        raise NotImplementedError
+        ...
 
 
 class DiskStorage(Storage):
@@ -45,7 +50,7 @@ class DiskStorage(Storage):
         try:
             with gzip.open(file_path, 'rb') as file_in:
                 return parse_binary_blob(file_in.read())
-        except gzip.BadGzipFile as error:
+        except gzip.BadGzipFile as error:  # pragma: no cover
             logging.error("Couldn't read %s: %s", file_path, error)
             return None
 

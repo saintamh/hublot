@@ -120,6 +120,6 @@ def _parse_line(data: bytes, pos: int, regex: str):
     eol_pos = data.find(EOL_BYTES, pos)
     line = data[pos : eol_pos].decode('UTF-8')
     match = re.search(regex, line)
-    if not match:
+    if not match:  # pragma: no cover
         raise ValueError(repr(line))
     return (*match.groups(), eol_pos + EOL_LEN)
