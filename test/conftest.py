@@ -11,6 +11,7 @@ from random import choices, random, randrange
 from string import ascii_letters
 from tempfile import TemporaryDirectory
 from threading import Thread
+from urllib.parse import urlencode
 
 # 3rd parties
 from flask import Flask, jsonify, make_response, request
@@ -130,6 +131,14 @@ def flask_app():
     @app.route('/cookies/set-two-cookies')
     def set_two_cookies():
         return str(next(iter_numbers)), 200, {'Set-Cookie': ['a=1', 'b=2']}
+
+    @app.route('/redirect', methods=['GET', 'POST', 'SLURP'])
+    def redirect():
+        params = dict(request.args)
+        code = int(params.pop('code'))
+        res = make_response('Boing', code)
+        res.headers['Location'] = '/echo?' + urlencode(params)
+        return res
 
     @app.route('/redirect/chain/1')
     def redirect_chain_1():

@@ -2,7 +2,7 @@
 
 # standards
 import json
-from typing import Dict, Optional
+from typing import Optional
 from urllib.parse import urlencode
 
 # 3rd parties
@@ -10,16 +10,14 @@ from requests.cookies import RequestsCookieJar, get_cookie_header
 
 # hublot
 from .config import Config
-from .datastructures import CompiledRequest, Headers, Request, Requestable
+from .datastructures import CompiledRequest, Headers, Request
 
 
 def compile_request(
-    cookies: RequestsCookieJar,
+    req: Request,
     config: Config,
-    url: Requestable,
-    request_kwargs: Dict[str, object],
+    cookies: RequestsCookieJar,
 ) -> CompiledRequest:
-    req = _compile_user_request(url, request_kwargs)
     headers = _compile_request_headers(config, req)
     data = _compile_request_data(req, headers)
     creq = CompiledRequest(
@@ -30,16 +28,6 @@ def compile_request(
     )
     _add_cookies_to_request(cookies, creq)
     return creq
-
-
-def _compile_user_request(url: Requestable, request_kwargs: Dict[str, object]) -> Request:
-    """
-    Take whatever the user passed to `fetch`, and make a `Request` object out of it.
-    """
-    if isinstance(url, Request):
-        return url.replace(**request_kwargs)
-    else:
-        return Request(url=url, **request_kwargs)  # type: ignore  # let it throw TypeError if needed
 
 
 def _compile_request_headers(config: Config, req: Request) -> Headers:

@@ -17,7 +17,7 @@ from requests.cookies import RequestsCookieJar
 from .cache import CacheKey, CacheSpec, UserSpecifiedCacheKey, load_cache
 from .compile import compile_request
 from .config import Config
-from .datastructures import CompiledRequest, Requestable, Response, TooManyRedirects, get_cookies_from_response
+from .datastructures import CompiledRequest, Request, Requestable, Response, TooManyRedirects, get_cookies_from_response
 from .decorator import SCRAPER_LOCAL
 from .engines import EngineSpec, load_engine_pool
 from .logs import LOGGER, LogEntry
@@ -54,18 +54,24 @@ class HttpClient:
         and nicer than calling it `requestable`. Hey, `urllib.request.urlopen` does the same thing, so.
         """
         config, request_kwargs = self.config.derive_using_kwargs(**kwargs)
+        req = url.replace(**request_kwargs) if isinstance(url, Request) else Request(url=url, **request_kwargs)  # type: ignore
         history: list[Response] = []
         for redirect_count in range(config.max_redirects):
             res = self._fetch_without_redirect(
-                url,
+                req,
                 cache_key,
                 config,
-                request_kwargs,
                 is_redirect=(redirect_count > 0),
             )
             if config.allow_redirects and res.is_redirect:
-                url = urljoin(res.url, res.headers['Location'])
-                cache_key = cache_key and CacheKey.parse(cache_key).next_in_sequence()
+                req = req.replace(
+                    url=urljoin(res.url, res.headers['Location']),
+                    params={},
+                )
+                if res.status_code not in (307, 308):
+                    req = req.replace(method='GET', data=None, json=None)
+                if cache_key:
+                    cache_key = CacheKey.parse(cache_key).next_in_sequence()
                 history.append(res)
             else:
                 if config.raise_for_status:
@@ -76,25 +82,24 @@ class HttpClient:
 
     def _fetch_without_redirect(
         self,
-        url: Requestable,
+        req: Request,
         cache_key: Optional[UserSpecifiedCacheKey],
         config: Config,
-        request_kwargs: Dict[str, object],
         is_redirect: bool,
     ) -> Response:
         frame = SCRAPER_LOCAL.stack[-1]
         if frame.is_retry:
             config.force_cache_stale = True
             config.courtesy_sleep = timedelta(0)
-        creq = compile_request(self.cookies, config, url, request_kwargs)
+        creq = compile_request(req, config, self.cookies)
         log = LogEntry(creq, is_redirect)
-        res = self._fetch_response(cache_key, creq, config, is_redirect, log)
+        res = self._read_response(cache_key, creq, config, is_redirect, log)
         if config.cookies_enabled:
             get_cookies_from_response(self.cookies, res)
         LOGGER.info('%s', log)
         return res
 
-    def _fetch_response(
+    def _read_response(
         self,
         cache_key: Optional[UserSpecifiedCacheKey],
         creq: CompiledRequest,

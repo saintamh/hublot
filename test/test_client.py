@@ -4,6 +4,7 @@
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.parse import urlencode
 
 # 3rd parties
 import pytest
@@ -137,6 +138,45 @@ def test_redirect_loop(client, server) -> None:
     # Make sure that the caching doesn't interfere with Requests' ability to detect redirect loops
     with pytest.raises(TooManyRedirects):
         client.fetch(f'{server}/redirect/loop')
+
+
+@pytest.mark.parametrize(
+    'request_method, body_kwarg',
+    [
+        ('GET', None),
+        ('POST', 'data'),
+        ('POST', 'json'),
+        ('SLURP', 'data'),
+    ],
+)
+@pytest.mark.parametrize(
+    'redirect_code',
+    [301, 302, 303, 307, 308],
+)
+@pytest.mark.parametrize(
+    'params_as_dict',
+    [True, False],
+)
+def test_redirect_method(client, server, request_method, body_kwarg, redirect_code, params_as_dict) -> None:
+    expected_method_for_redirected_request = request_method if redirect_code in (307, 308) else 'GET'
+    params = {'code': redirect_code, 'something': 'else'}
+    res = client.request(
+        method=request_method,
+        url=f'{server}/redirect' + ('' if params_as_dict else f'?{urlencode(params)}'),
+        params=params if params_as_dict else None,
+        data='blabla' if request_method != 'GET' and body_kwarg == 'data' else None,
+        json={'bla': 'bla'} if request_method != 'GET' and body_kwarg == 'json' else None,
+        headers={'Magic': 'Mushroom'},
+    )
+    payload = res.json()
+    assert payload['headers']['Magic'] == 'Mushroom'
+    assert payload['method'] == expected_method_for_redirected_request
+    assert payload['args'] == {'something': 'else'}
+    assert payload['data'] == (
+        '' if expected_method_for_redirected_request == 'GET'
+        else 'blabla' if body_kwarg == 'data'
+        else '{"bla":"bla"}'
+    )
 
 
 def test_client_preserves_casing_of_percent_escapes_in_path(client, server) -> None:
