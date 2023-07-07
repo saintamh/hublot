@@ -237,6 +237,9 @@ class HublotException(Exception):
     pass
 
 
+ScraperError = HublotException  # for backwards compatibility with Hublot <2
+
+
 class HttpError(HublotException):
     def __init__(self, message: str, response: Response) -> None:
         super().__init__(message)
