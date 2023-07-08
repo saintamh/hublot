@@ -88,10 +88,10 @@ class HttpClient:
         is_redirect: bool,
     ) -> Response:
         frame = SCRAPER_LOCAL.stack[-1]
-        if frame.is_retry:
+        if frame.num_retries > 0:
             config.force_cache_stale = True
             config.courtesy_sleep = timedelta(0)
-        creq = compile_request(req, config, self.cookies)
+        creq = compile_request(req, config, self.cookies, frame.num_retries)
         log = LogEntry(creq, is_redirect)
         res = self._read_response(cache_key, creq, config, is_redirect, log)
         if config.cookies_enabled:

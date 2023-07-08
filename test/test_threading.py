@@ -8,13 +8,13 @@ from time import sleep
 from hublot.decorator import SCRAPER_LOCAL, ThreadLocalStackFrame
 
 
-def thread_body(value: bool):
+def thread_body(value: int):
     num_sweeps = 50
     for _ in range(num_sweeps):
-        SCRAPER_LOCAL.stack.append(ThreadLocalStackFrame(is_retry=value))
+        SCRAPER_LOCAL.stack.append(ThreadLocalStackFrame(num_retries=value))
         sleep(0.01)
     for _ in range(num_sweeps):
-        assert SCRAPER_LOCAL.stack.pop().is_retry is value
+        assert SCRAPER_LOCAL.stack.pop().num_retries is value
         sleep(0.01)
 
 

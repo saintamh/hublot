@@ -21,6 +21,7 @@ def dummy_compiled_request(client: HttpClient, **kwargs) -> CompiledRequest:
         url,
         client.config,
         client.cookies,
+        num_retries=0,
     )
 
 

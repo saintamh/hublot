@@ -78,6 +78,7 @@ def parse_binary_blob(data: bytes) -> Response:
         method=method,
         headers=req_headers,
         data=req_body,
+        num_retries=0,
     )
     status_code, reason, pos = _parse_line(data, pos, r'^HTTP (\d+) (.*)$')
     res_headers, res_body, pos = _parse_message(data, pos, read_to_end=True)

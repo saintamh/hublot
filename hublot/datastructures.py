@@ -152,8 +152,9 @@ Requestable = Union[str, Request]
 class CompiledRequest:
     """
     Similarly to the requests library's Request/PreparedRequest duo, this class serves as a companion to the above Request
-    class. This class is considered private to Hublot. Instances of it are built internally. It represents the HTTP request, ready
-    to be sent to the server (or, more exactly in the case of this library, ready to be submitted to the client engine.
+    class. This class is considered private to Hublot; instances are built internally, and client code is not expected to handle
+    them. It represents the HTTP request, ready to be sent to the server (or, more exactly in the case of this library, ready to be
+    submitted to the client engine.
 
     This ends up re-implementing the core of the requests library's CompiledRequest class, but it was needed so that we know
     we're submitting the exact same request to all engines.
@@ -163,6 +164,7 @@ class CompiledRequest:
     method: str
     headers: Headers
     data: Optional[bytes]
+    num_retries: int
 
 
 @dataclass

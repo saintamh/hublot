@@ -2,7 +2,7 @@
 
 # hublot
 from ..config import Config
-from ..datastructures import CompiledRequest, HublotException, Response
+from ..datastructures import CompiledRequest, Response
 from .base import Engine
 
 
@@ -17,11 +17,11 @@ class EnginePool(Engine):
         return self.engines[0].short_code()
 
     def request(self, creq: CompiledRequest, config: Config) -> Response:
-        try:
-            return self.engines[0].request(creq, config)
-        except HublotException:
-            if len(self.engines) > 1:
-                # Rotate the engine list, so that the next attempt will be with the next engine. This is an inefficient operation,
-                # but the list is only ever going to have 1 to 3 items, and this operation isn't expected to happen a lot anyway
-                self.engines = self.engines[1:] + self.engines[:1]
-            raise
+        engine_idx = creq.num_retries % len(self.engines)
+        res = self.engines[0].request(creq, config)
+        if engine_idx > 0:
+            # After we've found a working engine, move it to the front of the list, so that subsequent attempts will use it. This
+            # is an inefficient operation, but the list is only ever going to have 1 to 3 items, and this operation isn't expected
+            # to happen a lot anyway
+            self.engines = self.engines[engine_idx:] + self.engines[:engine_idx]
+        return res

@@ -17,6 +17,7 @@ def compile_request(
     req: Request,
     config: Config,
     cookies: RequestsCookieJar,
+    num_retries: int,
 ) -> CompiledRequest:
     headers = _compile_request_headers(config, req)
     data = _compile_request_data(req, headers)
@@ -25,6 +26,7 @@ def compile_request(
         method=req.method.upper() if req.method else ('POST' if data is not None else 'GET'),
         headers=headers,
         data=data,
+        num_retries=num_retries,
     )
     _add_cookies_to_request(cookies, creq)
     return creq

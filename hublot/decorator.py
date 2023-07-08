@@ -16,7 +16,7 @@ from .logs import LOGGER
 
 @dataclass
 class ThreadLocalStackFrame:
-    is_retry: bool = False
+    num_retries: int = 0
 
 
 class ThreadLocalStack(threading.local):
@@ -57,8 +57,7 @@ def retry_on_scraper_error(
             with scraper_stack_frame() as frame:
                 for attempt in range(num_attempts):
                     try:
-                        if attempt > 0:
-                            frame.is_retry = True
+                        frame.num_retries = attempt
                         payload = function(*args, **kwargs)
                         if isinstance(payload, (Iterator, Generator)) and not isinstance(payload, Sized):
                             payload = list(payload)
