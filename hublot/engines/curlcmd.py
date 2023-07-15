@@ -29,6 +29,9 @@ class CurlCmdEngine(Engine):
 
     id = 'curlcmd'
 
+    def __init__(self, curl_cmd: str = 'curl') -> None:
+        self.curl_cmd = curl_cmd
+
     def short_code(self) -> str:
         return 'cc'
 
@@ -64,10 +67,9 @@ class CurlCmdEngine(Engine):
             content=curl.stdout[headers_match.end():],
         )
 
-    @staticmethod
-    def _compose_curl_command(creq: CompiledRequest, config: Config) -> Iterable[str]:
+    def _compose_curl_command(self, creq: CompiledRequest, config: Config) -> Iterable[str]:
         yield from [
-            'curl',
+            self.curl_cmd,
             creq.url,
             '--request', creq.method,
             '--connect-timeout', str(config.timeout),
