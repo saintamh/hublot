@@ -65,7 +65,7 @@ def retry_on_scraper_error(
                     except Exception as error:  # pylint: disable=broad-except
                         if isinstance(error, error_types) and attempt < num_attempts - 1:
                             delay = 5**attempt
-                            LOGGER.error('%s: %s - sleeping %ds', type(error).__name__, error, delay)
+                            LOGGER.error("%s: %s - sleeping %ds", type(error).__name__, error, delay)
                             sleep(delay)
                         else:
                             raise

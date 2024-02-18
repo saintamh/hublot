@@ -26,19 +26,19 @@ LOGGER = logging.getLogger(__name__)
 
 
 RE_STATUS = re.compile(
-    r'^\s* HTTP/\d+(?:\.\d+)? \s+ (\d\d\d) \s* (?: (\S.+?) \s* )? $',
+    r"^\s* HTTP/\d+(?:\.\d+)? \s+ (\d\d\d) \s* (?: (\S.+?) \s* )? $",
     flags=re.M | re.X,
 )
 
 RE_HEADER = re.compile(
-    r'^\s* ([^:]+?) \s*:\s* (.+?) \s*$',
+    r"^\s* ([^:]+?) \s*:\s* (.+?) \s*$",
     flags=re.M | re.X,
 )
 
 
 class PyCurlEngine(Engine):
 
-    id = 'pycurl'
+    id = "pycurl"
 
     def __init__(self) -> None:
         if not HAVE_PYCURL:
@@ -46,7 +46,7 @@ class PyCurlEngine(Engine):
         self.curl: Any = pycurl.Curl()  # pylint: disable=c-extension-no-member
 
     def short_code(self) -> str:
-        return 'pc'
+        return "pc"
 
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         c = self.curl
@@ -55,7 +55,7 @@ class PyCurlEngine(Engine):
         c.setopt(c.CUSTOMREQUEST, creq.method)
         c.setopt(
             c.HTTPHEADER,
-            [f'{key}: {value}'.encode('ISO-8859-1') for key, value in creq.headers.items()],
+            [f"{key}: {value}".encode("ISO-8859-1") for key, value in creq.headers.items()],
         )
         if creq.data is not None:
             c.setopt(c.POSTFIELDS, creq.data)
@@ -66,7 +66,7 @@ class PyCurlEngine(Engine):
             if proxy:
                 c.setopt(c.PROXY, proxy)
 
-        c.setopt(c.ACCEPT_ENCODING, '')  # accept all curl-supported encodings
+        c.setopt(c.ACCEPT_ENCODING, "")  # accept all curl-supported encodings
         c.setopt(c.TIMEOUT, config.timeout)
         c.setopt(c.SSL_VERIFYHOST, 2 if config.verify else 0)
         c.setopt(c.SSL_VERIFYPEER, 1 if config.verify else 0)
@@ -105,7 +105,7 @@ class PyCurlEngine(Engine):
         line_bytes: bytes,
     ) -> None:
         # HTTP standard specifies that headers are encoded in iso-8859-1
-        line = line_bytes.decode('ISO-8859-1')
+        line = line_bytes.decode("ISO-8859-1")
         if not line.strip():
             return
         if not status_code:
@@ -114,13 +114,13 @@ class PyCurlEngine(Engine):
                 status_code.append(int(match[1]))
                 reason.append(match[2])
             else:  # pragma: no cover
-                LOGGER.warning('Malformed status line: %r', line)
+                LOGGER.warning("Malformed status line: %r", line)
         else:
             match = RE_HEADER.match(line)
             if match:
                 headers.add(match[1], match[2])
             else:  # pragma: no cover
-                LOGGER.warning('Malformed header line: %r', line)
+                LOGGER.warning("Malformed header line: %r", line)
 
 
 register_engine(PyCurlEngine)

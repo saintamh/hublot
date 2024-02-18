@@ -8,7 +8,7 @@ from .base import Engine
 
 class EnginePool(Engine):
 
-    id = 'engine-pool'
+    id = "engine-pool"
 
     def __init__(self, engines: list[Engine]):
         self.engines = engines

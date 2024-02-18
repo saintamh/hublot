@@ -27,13 +27,13 @@ class CurlCmdEngineError(HublotException):
 
 class CurlCmdEngine(Engine):
 
-    id = 'curlcmd'
+    id = "curlcmd"
 
-    def __init__(self, curl_cmd: str = 'curl') -> None:
+    def __init__(self, curl_cmd: str = "curl") -> None:
         self.curl_cmd = curl_cmd
 
     def short_code(self) -> str:
-        return 'cc'
+        return "cc"
 
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         curl = subprocess.run(
@@ -43,18 +43,18 @@ class CurlCmdEngine(Engine):
             check=False,
         )
         if curl.returncode != 0:  # pragma: no cover
-            output = curl.stderr.decode('UTF-8')
-            message_match = re.search(fr'curl: \({curl.returncode}\) (.+)', output)
+            output = curl.stderr.decode("UTF-8")
+            message_match = re.search(rf"curl: \({curl.returncode}\) (.+)", output)
             message = message_match[1] if message_match else None
             if curl.returncode == 6:
                 raise ConnectionError(message or output)
             else:
                 raise HublotException(output)
 
-        headers_match = re.search(br'\r?\n\r?\n', curl.stdout)
+        headers_match = re.search(rb"\r?\n\r?\n", curl.stdout)
         if not headers_match:  # pragma: no cover
-            raise Exception('Failed to find headers in curl output')
-        headers_str = curl.stdout[: headers_match.start()].decode('ISO-8859-1')
+            raise Exception("Failed to find headers in curl output")
+        headers_str = curl.stdout[: headers_match.start()].decode("ISO-8859-1")
 
         status_code, reason, headers_str = self._parse_status_line(headers_str)
         return Response(
@@ -71,30 +71,30 @@ class CurlCmdEngine(Engine):
         yield from [
             self.curl_cmd,
             creq.url,
-            '--request',
+            "--request",
             creq.method,
-            '--connect-timeout',
+            "--connect-timeout",
             str(config.timeout),
-            '--compressed',
-            '--include',
+            "--compressed",
+            "--include",
         ]
         for key, value in creq.headers.items():
-            yield from ['-H', f'{key}: {value}']
+            yield from ["-H", f"{key}: {value}"]
         if creq.data is not None:
-            yield from ['--data-binary', '@-']
+            yield from ["--data-binary", "@-"]
         if config.proxies:
             scheme = urlparse(creq.url).scheme
             proxy = config.proxies.get(scheme)
             if proxy:
-                yield from ['--proxy', proxy]
+                yield from ["--proxy", proxy]
         if not config.verify:
-            yield '--insecure'
+            yield "--insecure"
 
     @staticmethod
     def _parse_status_line(headers_str: str) -> Tuple[int, Optional[str], str]:
         match = RE_STATUS.search(headers_str)
         if not match:  # pragma: no cover
-            raise HublotException('Malformed headers')
+            raise HublotException("Malformed headers")
         return int(match[1]), match[2], headers_str[match.end() :]
 
     @staticmethod

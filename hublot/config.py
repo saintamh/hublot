@@ -16,7 +16,7 @@ from .version import HUBLOT_VERSION
 DEFAULT_HEADERS_IGNORED_BY_CACHE = frozenset(
     [
         # By excluding User-Agent from cache we can upgrade Hublot, or fake a more recent browser, without zapping the entire cache.
-        'User-Agent',
+        "User-Agent",
     ]
 )
 
@@ -33,10 +33,10 @@ class Config:
     proxies: Optional[Dict[str, str]] = None
     raise_for_status: bool = True
     timeout: Optional[int] = 60
-    user_agent: Optional[str] = f'hublot/{HUBLOT_VERSION}'
+    user_agent: Optional[str] = f"hublot/{HUBLOT_VERSION}"
     verify: Optional[bool] = True
 
-    def derive_using_kwargs(self, **kwargs: object) -> Tuple['Config', Dict[str, object]]:
+    def derive_using_kwargs(self, **kwargs: object) -> Tuple["Config", Dict[str, object]]:
         # NB this must always return a new instance, so that the caller can modify it without affecting the original
         config = Config(**{key: kwargs.pop(key, default) for key, default in asdict(self).items()})  # type: ignore
         return config, kwargs

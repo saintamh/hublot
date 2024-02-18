@@ -71,7 +71,7 @@ CacheSpec = Union[Cache, Path, str, None]
 def load_cache(
     cache: CacheSpec = None,
     config: Config = Config(),
-) -> Optional['Cache']:
+) -> Optional["Cache"]:
     """
     Takes the `cache` param given to the `HttpClient` constructor, and returns a `Cache` instance, or `None`
     """
@@ -82,7 +82,7 @@ def load_cache(
             storage=DiskStorage(root_path=cache),
             config=config,
         )
-    elif isinstance(cache, str) and cache.startswith('redis://'):  # pragma: no cover
+    elif isinstance(cache, str) and cache.startswith("redis://"):  # pragma: no cover
         raise NotImplementedError  # some day
     else:
         raise TypeError(repr(cache))

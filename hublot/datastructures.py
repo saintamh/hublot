@@ -26,9 +26,9 @@ JsonValue = Union[
     int,
     float,
     bool,
-    List['JsonValue'],
-    Tuple['JsonValue'],
-    Dict[str, 'JsonValue'],
+    List["JsonValue"],
+    Tuple["JsonValue"],
+    Dict[str, "JsonValue"],
 ]
 
 
@@ -42,7 +42,7 @@ class Headers:
 
     _dict: Dict[str, List[Tuple[str, str]]]
 
-    def __init__(self, base: Optional[Union['Headers', Dict[str, str]]] = None) -> None:
+    def __init__(self, base: Optional[Union["Headers", Dict[str, str]]] = None) -> None:
         self._dict = {}
         if base:
             for key, value in base.items():
@@ -69,7 +69,7 @@ class Headers:
         value_list = self.get_all(key)
         if not value_list:
             return default
-        return '; '.join(value_list)
+        return "; ".join(value_list)
 
     def get_all(self, key: str, default: Sequence[str] = ()) -> Sequence[str]:
         value_list = self._dict.get(key.title())
@@ -117,7 +117,7 @@ class Headers:
         return sorted(self.items(normalise_keys=True)) == sorted(other.items(normalise_keys=True))
 
     def __repr__(self) -> str:
-        return 'Headers({%s})' % ', '.join(f'{key!r}: {value!r}' for key, value in self.items())
+        return "Headers({%s})" % ", ".join(f"{key!r}: {value!r}" for key, value in self.items())
 
 
 @dataclass
@@ -141,7 +141,7 @@ class Request:
     auth: Optional[Tuple[str, str]] = None
     cookies: Optional[Dict[str, str]] = None
 
-    def replace(self, **kwargs) -> 'Request':
+    def replace(self, **kwargs) -> "Request":
         return replace(self, **kwargs)
 
 
@@ -176,7 +176,7 @@ class Response:
 
     request: CompiledRequest
     from_cache: bool
-    history: List['Response']
+    history: List["Response"]
 
     status_code: int
     reason: Optional[str]
@@ -189,7 +189,7 @@ class Response:
 
     @property
     def text(self) -> str:
-        encoding = chardet.detect(self.content)['encoding']
+        encoding = chardet.detect(self.content)["encoding"]
         if encoding is None:
             raise CharsetDetectionFailure()
         return self.content.decode(encoding)
@@ -203,7 +203,7 @@ class Response:
     def raise_for_status(self) -> None:
         if 400 <= self.status_code < 600:
             raise HttpError(
-                f'{self.status_code} Client Error: {self.reason} for url: {self.url}',
+                f"{self.status_code} Client Error: {self.reason} for url: {self.url}",
                 response=self,
             )
 
@@ -217,7 +217,7 @@ class Response:
 
     @property
     def is_redirect(self) -> bool:
-        return 'Location' in self.headers and self.status_code in {301, 302, 303, 307, 308}
+        return "Location" in self.headers and self.status_code in {301, 302, 303, 307, 308}
 
     @property
     def cookies(self) -> RequestsCookieJar:

@@ -11,7 +11,7 @@ from ..config import Config
 from ..datastructures import CompiledRequest
 
 
-UserSpecifiedCacheKey = Union['CacheKey', Tuple[str, ...], str]
+UserSpecifiedCacheKey = Union["CacheKey", Tuple[str, ...], str]
 
 
 @dataclass(frozen=True, order=True)
@@ -27,37 +27,37 @@ class CacheKey:
             #  * all chars that aren't valid in Windows file names
             #  * slashes, backslashes and null chars
             #  * dots, so that ".4" at the end unambiguously identifies a sequence num (and also avoids directory traversal vulns)
-            re.sub(r'[^\w\-]', lambda m: f'%{ord(m.group()):02X}', part)
+            re.sub(r"[^\w\-]", lambda m: f"%{ord(m.group()):02X}", part)
             for part in self.parts
         ]
         if self.sequence_num > 0:
-            parts[-1] += f'.{self.sequence_num}'
+            parts[-1] += f".{self.sequence_num}"
         return tuple(parts)
 
     @property
     def unique_str(self) -> str:
         # NB the string we return isn't for use in paths, so we can use '/' as the separator regardless of platform. Slashes have
         # been removed from the parts, so this is unambiguous.
-        return '/'.join(self.path_parts)
+        return "/".join(self.path_parts)
 
     def next_in_sequence(self):
         return replace(self, sequence_num=self.sequence_num + 1)
 
     @classmethod
     def from_path_parts(cls, parts):
-        seq_match = re.search(r'\.(\d+)$', parts[-1])
+        seq_match = re.search(r"\.(\d+)$", parts[-1])
         if seq_match:
             sequence_num = int(seq_match.group(1))
             parts[-1] = parts[-1][: seq_match.start()]
         else:
             sequence_num = 0
         return cls(
-            parts=tuple(re.sub(r'%([0-9a-fA-F]{2})', lambda m: chr(int(m.group(1), 16)), p) for p in parts),
+            parts=tuple(re.sub(r"%([0-9a-fA-F]{2})", lambda m: chr(int(m.group(1), 16)), p) for p in parts),
             sequence_num=sequence_num,
         )
 
     @classmethod
-    def compute(cls, creq: CompiledRequest, config: Config) -> 'CacheKey':
+    def compute(cls, creq: CompiledRequest, config: Config) -> "CacheKey":
         # NB we don't normalise the order of the `params` dict or `data` dict. If running in Python 3.6+, where dicts preserve
         # their insertion order, multiple calls from the same code, where the params are defined in the same order, will hit the
         # same cache key. In previous versions, maybe not, so in 3.5 and before params and body should be serialised before being
@@ -72,7 +72,7 @@ class CacheKey:
         )
         # Shortening to 16 chars means it's easier to copy-paste, takes less space in the terminal, etc. Seems like a flimsy reason
         # for increasing the chances of a collision, but at 2^64 bits these chances are still comfortably negligible.
-        hashed = md5(repr(key).encode('UTF-8')).hexdigest()[:16]
+        hashed = md5(repr(key).encode("UTF-8")).hexdigest()[:16]
         return cls((hashed[:3], hashed[3:]))
 
     @classmethod
@@ -82,6 +82,6 @@ class CacheKey:
         elif isinstance(user_specified_key, tuple):
             return cls(user_specified_key)
         elif isinstance(user_specified_key, str):
-            return cls(tuple(user_specified_key.strip('/').split('/')))
+            return cls(tuple(user_specified_key.strip("/").split("/")))
         else:
             raise TypeError(repr(user_specified_key))

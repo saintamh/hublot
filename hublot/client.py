@@ -32,7 +32,7 @@ class HttpClient:
     def __init__(
         self,
         cache: CacheSpec = None,
-        engines: Sequence[EngineSpec] = ('requests',),
+        engines: Sequence[EngineSpec] = ("requests",),
         **config_kwargs,
     ) -> None:
         self.config = Config(**config_kwargs)
@@ -65,11 +65,11 @@ class HttpClient:
             )
             if config.allow_redirects and res.is_redirect:
                 req = req.replace(
-                    url=urljoin(res.url, res.headers['Location']),
+                    url=urljoin(res.url, res.headers["Location"]),
                     params={},
                 )
                 if res.status_code not in (307, 308):
-                    req = req.replace(method='GET', data=None, json=None)
+                    req = req.replace(method="GET", data=None, json=None)
                 if cache_key:
                     cache_key = CacheKey.parse(cache_key).next_in_sequence()
                 history.append(res)
@@ -78,7 +78,7 @@ class HttpClient:
                     res.raise_for_status()
                 res.history = history
                 return res
-        raise TooManyRedirects(f'Exceeded {config.max_redirects} redirects')
+        raise TooManyRedirects(f"Exceeded {config.max_redirects} redirects")
 
     def _fetch_without_redirect(
         self,
@@ -96,7 +96,7 @@ class HttpClient:
         res = self._read_response(cache_key, creq, config, is_redirect, log)
         if config.cookies_enabled:
             get_cookies_from_response(self.cookies, res)
-        LOGGER.info('%s', log)
+        LOGGER.info("%s", log)
         return res
 
     def _read_response(
@@ -131,7 +131,7 @@ class HttpClient:
         is_redirect: bool,
         log: LogEntry,
     ) -> Iterator[None]:
-        host = urlparse(creq.url).hostname or ''
+        host = urlparse(creq.url).hostname or ""
         last_request = self.last_request_per_host.get(host, 0)
         if config.courtesy_sleep and not is_redirect:
             delay_seconds = (last_request + config.courtesy_sleep.total_seconds()) - time()
@@ -150,7 +150,7 @@ class HttpClient:
         return self.fetch(url, method=method, **kwargs)
 
     def get(self, url: str, **kwargs) -> Response:
-        return self.fetch(url, method='GET', **kwargs)
+        return self.fetch(url, method="GET", **kwargs)
 
     def post(self, url: str, data=None, **kwargs) -> Response:
-        return self.fetch(url, method='POST', data=data, **kwargs)
+        return self.fetch(url, method="POST", data=data, **kwargs)

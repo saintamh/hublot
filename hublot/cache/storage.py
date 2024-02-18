@@ -44,7 +44,7 @@ class DiskStorage(Storage):
             if file_age > max_age:
                 return None
         try:
-            with gzip.open(file_path, 'rb') as file_in:
+            with gzip.open(file_path, "rb") as file_in:
                 return parse_binary_blob(file_in.read())
         except gzip.BadGzipFile as error:  # pragma: no cover
             logging.error("Couldn't read %s: %s", file_path, error)
@@ -53,13 +53,13 @@ class DiskStorage(Storage):
     def write(self, key: CacheKey, response: Response) -> None:
         file_path = self._file_path(key)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        with gzip.open(file_path, 'wb') as file_out:
+        with gzip.open(file_path, "wb") as file_out:
             file_out.write(compose_binary_blob(response))
 
     def iter_all_keys(self) -> Iterable[CacheKey]:
         for file_path in self._iter_all_files():
             parts = list(file_path.relative_to(self.root_path).parts)
-            parts[-1] = re.sub(r'\.gz$', '', file_path.name)
+            parts[-1] = re.sub(r"\.gz$", "", file_path.name)
             yield CacheKey.from_path_parts(parts)
 
     def prune(self, max_age: timedelta) -> None:
@@ -76,12 +76,12 @@ class DiskStorage(Storage):
                 dir_path = dir_path.parent
 
     def _iter_all_files(self) -> Iterable[Path]:
-        return self.root_path.glob('**/*.gz')
+        return self.root_path.glob("**/*.gz")
 
     def _file_path(self, key: CacheKey) -> Path:
         file_path = self.root_path / Path(*key.path_parts)
-        if not file_path.suffix == '.gz':
-            file_path = file_path.parent / f'{file_path.name}.gz'
+        if not file_path.suffix == ".gz":
+            file_path = file_path.parent / f"{file_path.name}.gz"
         return file_path
 
 

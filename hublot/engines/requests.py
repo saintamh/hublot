@@ -18,7 +18,7 @@ from .register import register_engine
 
 class RequestsEngine(Engine):
 
-    id = 'requests'
+    id = "requests"
 
     def __init__(self) -> None:
         self.session = requests.Session()
@@ -26,7 +26,7 @@ class RequestsEngine(Engine):
         self.session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
 
     def short_code(self) -> str:
-        return 'rq'
+        return "rq"
 
     def request(self, creq: CompiledRequest, config: Config) -> Response:
         try:
@@ -69,7 +69,7 @@ def _encode_invalid_chars_preserve_case(component: str, *rest, **kwargs) -> str:
         # You could argue that the HTTP spec says %-escapes are case-insensitive, so it's the server described above that's
         # buggy, but browsers have no problem fetching such a page, so I'd argue it's a `requests` bug.
         #
-        new = re.sub(r'%[0-9a-fA-F]{2}', lambda m: m.group().lower(), new)
+        new = re.sub(r"%[0-9a-fA-F]{2}", lambda m: m.group().lower(), new)
     return new
 
 

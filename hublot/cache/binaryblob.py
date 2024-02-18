@@ -18,12 +18,12 @@ from typing import Callable, Optional, Tuple
 from ..datastructures import CompiledRequest, Headers, Response
 
 
-EOL = '\r\n'
-EOL_BYTES = EOL.encode('UTF-8')
+EOL = "\r\n"
+EOL_BYTES = EOL.encode("UTF-8")
 EOL_LEN = len(EOL)
 
 
-Writer = getwriter('UTF-8')  # pylint: disable=invalid-name
+Writer = getwriter("UTF-8")  # pylint: disable=invalid-name
 
 
 def compose_binary_blob(res: Response) -> bytes:
@@ -39,16 +39,16 @@ def _compose_request_blob(
     output: BytesIO,
     write: Callable[[str], None],
 ) -> None:
-    write(f'{creq.method} {creq.url}{EOL}')
+    write(f"{creq.method} {creq.url}{EOL}")
     for key, value in sorted(creq.headers.items()):
-        write(f'{key}: {value}{EOL}')
+        write(f"{key}: {value}{EOL}")
     write(EOL)
-    if 'Content-Length' in creq.headers:
-        body = b'' if creq.data is None else creq.data
-        content_length = int(creq.headers['Content-Length'])
+    if "Content-Length" in creq.headers:
+        body = b"" if creq.data is None else creq.data
+        content_length = int(creq.headers["Content-Length"])
         if content_length != len(body):
             # Don't write it out because we won't be able to read it back
-            raise Exception(f'body has {len(body)} bytes but Content-Length is {content_length}')
+            raise Exception(f"body has {len(body)} bytes but Content-Length is {content_length}")
         output.write(body)
         write(EOL)
     else:
@@ -61,9 +61,9 @@ def _compose_response_blob(
     output: BytesIO,
     write: Callable[[str], None],
 ) -> None:
-    write(f'HTTP {res.status_code} {res.reason}{EOL}')
+    write(f"HTTP {res.status_code} {res.reason}{EOL}")
     for key, value in sorted(res.headers.items()):
-        write(f'{key}: {value}{EOL}')
+        write(f"{key}: {value}{EOL}")
     write(EOL)
     if res.content is not None:
         output.write(res.content)
@@ -71,7 +71,7 @@ def _compose_response_blob(
 
 def parse_binary_blob(data: bytes) -> Response:
     pos = 0
-    method, url, pos = _parse_line(data, pos, r'^(\w+) (.+)$')
+    method, url, pos = _parse_line(data, pos, r"^(\w+) (.+)$")
     req_headers, req_body, pos = _parse_message(data, pos)
     creq = CompiledRequest(
         url=url,
@@ -80,7 +80,7 @@ def parse_binary_blob(data: bytes) -> Response:
         data=req_body,
         num_retries=0,
     )
-    status_code, reason, pos = _parse_line(data, pos, r'^HTTP (\d+) (.*)$')
+    status_code, reason, pos = _parse_line(data, pos, r"^HTTP (\d+) (.*)$")
     res_headers, res_body, pos = _parse_message(data, pos, read_to_end=True)
     assert res_body is not None  # since we passed `read_to_end=True`
     return Response(
@@ -101,15 +101,15 @@ def _parse_message(
 ) -> Tuple[Headers, Optional[bytes], int]:
     headers = Headers()
     while data[pos : pos + EOL_LEN] != EOL_BYTES:
-        key, value, pos = _parse_line(data, pos, r'^([^:]+): (.*)$')
+        key, value, pos = _parse_line(data, pos, r"^([^:]+): (.*)$")
         headers[key] = value
     pos += EOL_LEN
     body: Optional[bytes] = None
     if read_to_end:
         body = data[pos:]
         pos = len(data)
-    elif headers.get('Content-Length'):
-        length = int(headers['Content-Length'])
+    elif headers.get("Content-Length"):
+        length = int(headers["Content-Length"])
         body = data[pos : pos + length]
         pos += length + (2 * EOL_LEN)
     else:
@@ -119,7 +119,7 @@ def _parse_message(
 
 def _parse_line(data: bytes, pos: int, regex: str):
     eol_pos = data.find(EOL_BYTES, pos)
-    line = data[pos:eol_pos].decode('UTF-8')
+    line = data[pos:eol_pos].decode("UTF-8")
     match = re.search(regex, line)
     if not match:  # pragma: no cover
         raise ValueError(repr(line))

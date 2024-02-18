@@ -11,11 +11,11 @@ from hublot.datastructures import CompiledRequest, Headers
 
 
 def dummy_compiled_request(client: HttpClient, **kwargs) -> CompiledRequest:
-    url: Requestable = kwargs.pop('url', 'http://example.com/test')
+    url: Requestable = kwargs.pop("url", "http://example.com/test")
     if isinstance(url, str):
-        kwargs.setdefault('method', 'POST')
-        if kwargs['method'] in ('POST', 'PUT') and 'json' not in kwargs:
-            kwargs.setdefault('data', b'This is my request data')
+        kwargs.setdefault("method", "POST")
+        if kwargs["method"] in ("POST", "PUT") and "json" not in kwargs:
+            kwargs.setdefault("data", b"This is my request data")
         url = Request(url=url, **kwargs)
     return compile_request(
         url,
@@ -29,9 +29,9 @@ def dummy_response(
     creq: CompiledRequest,
     from_cache: bool = False,
     status_code: int = 200,
-    reason: str = 'OK',
+    reason: str = "OK",
     headers: Optional[Dict[str, str]] = None,
-    data: bytes = b'This is my response data',
+    data: bytes = b"This is my response data",
 ) -> Response:
     return Response(
         request=creq,
