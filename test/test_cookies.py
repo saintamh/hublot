@@ -68,3 +68,11 @@ def test_response_that_redirects_to_same_url_with_cookie(client, server):
 def test_set_cookie_manually(client, server):
     client.cookies.set("x", "1")
     assert client.get(f"{server}/cookies/get").json() == {"x": "1"}
+
+
+def test_cookies_can_be_cleared(client, server):
+    assert client.get(f"{server}/cookies/get").json() == {}
+    client.get(f"{server}/cookies/set?coo=kie")
+    assert client.get(f"{server}/cookies/get").json() == {"coo": "kie"}
+    client.cookies.clear()
+    assert client.get(f"{server}/cookies/get").json() == {}
