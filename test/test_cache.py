@@ -28,14 +28,8 @@ def iter_pairs(client: HttpClient) -> Iterable[Tuple[dict, Response]]:
 
 def test_cache(reinstantiable_client) -> None:
     client = reinstantiable_client()
-    pairs = [
-        (dummy_compiled_request(client, **req), res)
-        for req, res in iter_pairs(client)
-    ]
-    log_entries = [
-        LogEntry(creq)
-        for creq, _res_unused in pairs
-    ]
+    pairs = [(dummy_compiled_request(client, **req), res) for req, res in iter_pairs(client)]
+    log_entries = [LogEntry(creq) for creq, _res_unused in pairs]
     cache = client.cache
     for (creq, _res_unused), log in zip(pairs, log_entries):
         assert cache.get(creq, log) is None  # else test is invalid

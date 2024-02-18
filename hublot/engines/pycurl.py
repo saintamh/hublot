@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 # 3rd parties
 try:
     import pycurl
+
     HAVE_PYCURL = True
 except ImportError:
     HAVE_PYCURL = False
@@ -26,12 +27,12 @@ LOGGER = logging.getLogger(__name__)
 
 RE_STATUS = re.compile(
     r'^\s* HTTP/\d+(?:\.\d+)? \s+ (\d\d\d) \s* (?: (\S.+?) \s* )? $',
-    flags=re.M|re.X,
+    flags=re.M | re.X,
 )
 
 RE_HEADER = re.compile(
     r'^\s* ([^:]+?) \s*:\s* (.+?) \s*$',
-    flags=re.M|re.X,
+    flags=re.M | re.X,
 )
 
 
@@ -54,10 +55,7 @@ class PyCurlEngine(Engine):
         c.setopt(c.CUSTOMREQUEST, creq.method)
         c.setopt(
             c.HTTPHEADER,
-            [
-                f'{key}: {value}'.encode('ISO-8859-1')
-                for key, value in creq.headers.items()
-            ],
+            [f'{key}: {value}'.encode('ISO-8859-1') for key, value in creq.headers.items()],
         )
         if creq.data is not None:
             c.setopt(c.POSTFIELDS, creq.data)
@@ -70,7 +68,7 @@ class PyCurlEngine(Engine):
 
         c.setopt(c.ACCEPT_ENCODING, '')  # accept all curl-supported encodings
         c.setopt(c.TIMEOUT, config.timeout)
-        c.setopt(c.SSL_VERIFYHOST, 1 if config.verify else 0)
+        c.setopt(c.SSL_VERIFYHOST, 2 if config.verify else 0)
         c.setopt(c.SSL_VERIFYPEER, 1 if config.verify else 0)
 
         headers = Headers()

@@ -29,25 +29,20 @@ def test_simple_cache_use(client):
 EQUIVALENCIES = [
     # For every attribute of a CompiledRequest, lists groups values such that values within the same group should be cached under
     # the same key, but not across groups
-
     # Obviously requests using different methods should be cached separately
     [{'method': 'GET'}],
     [{'method': 'POST'}],
-
     # URLs are case sensitive
     [{'url': 'http://cache-test/url'}],
     [{'url': 'http://cache-test/URL'}],
     [{'url': 'http://cache-test/URL/'}],
-
     # The ordering of the parameters in the URL string matters. They're not parsed at all, so a final '&' is also a cache breaker
     [{'url': 'http://cache-test/TEST?a=1&b=2'}],
     [{'url': 'http://cache-test/TEST?b=2&a=1'}],
     [{'url': 'http://cache-test/TEST?a=1&b=2&'}],
-
     # `params` are also part of the URL key
     [{'url': 'http://cache-test/params', 'params': {}}],
     [{'url': 'http://cache-test/params', 'params': {'x': 'a'}}],
-
     # `params` get appended to the URL, so these are equivalent. Using OrderedDict for pythons before 3.7.
     [
         {'url': 'http://cache-test/params-test', 'params': OrderedDict([('a', '1'), ('b', '2')])},
@@ -55,12 +50,10 @@ EQUIVALENCIES = [
         {'url': 'http://cache-test/params-test?a=1', 'params': OrderedDict([('b', '2')])},
         {'url': 'http://cache-test/params-test?a=1&b=2', 'params': OrderedDict()},
     ],
-
     # The presence, absence, or value of a header are all enough to bust the cache
     [{'url': 'http://cache-test/header-test', 'headers': {}}],
     [{'url': 'http://cache-test/header-test', 'headers': {'X-Test': '1'}}],
     [{'url': 'http://cache-test/header-test', 'headers': {'X-Test': '2'}}],
-
     # The `requests` library will normalise the case of headers before sending them off to the server, and so headers are
     # case-insensitive, and so all of these get the same cache key
     [
@@ -68,19 +61,16 @@ EQUIVALENCIES = [
         {'url': 'http://cache-test/header-test-2', 'headers': {'x-test': '1'}},
         {'url': 'http://cache-test/header-test-2', 'headers': {'X-TEST': '1'}},
     ],
-
     # The order of the headers in the dict doesn't matter of course
     [
         {'url': 'http://cache-test/header-order-test', 'headers': {'X-Test-A': 'a', 'X-Test-B': 'b'}},
         {'url': 'http://cache-test/header-order-test', 'headers': {'X-Test-B': 'b', 'X-Test-A': 'a'}},
     ],
-
     # Setting a cookie via `cookies` is the same as setting it manually in a header
     [
         {'url': 'http://cache-test/cookie-test', 'cookies': {'a': '1'}, 'headers': {}},
         {'url': 'http://cache-test/cookie-test', 'cookies': {}, 'headers': {'Cookie': 'a=1'}},
     ],
-
     # Setting `data` as a dict is equivalent to setting it manually as bytes
     [
         {'url': 'http://cache-test/data-test', 'data': {'a': '1'}},
@@ -90,7 +80,6 @@ EQUIVALENCIES = [
             'headers': {'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': '3'},
         },
     ],
-
     # Setting `json` is equivalent to manually building the request
     [
         {'url': 'http://cache-test/json-test', 'json': {'a': '1'}},
@@ -100,7 +89,6 @@ EQUIVALENCIES = [
             'headers': {'Content-Type': 'application/json'},
         },
     ],
-
     # requests can be specified as `Request` objects
     [
         {'url': 'http://cache-test/request-objects', 'method': 'GET'},
@@ -140,7 +128,6 @@ EQUIVALENCIES = [
             ),
         },
     ],
-
 ]
 
 
@@ -217,20 +204,14 @@ TEST_KEYS = [
 ]
 
 
-@pytest.mark.parametrize(
-    'user_specified, expected_path, expected_unique_str',
-    TEST_KEYS
-)
+@pytest.mark.parametrize('user_specified, expected_path, expected_unique_str', TEST_KEYS)
 def test_cache_key_parsing(user_specified, expected_path, expected_unique_str):
     parsed = CacheKey.parse(user_specified)
     assert ''.join(f'/{p}' for p in parsed.path_parts) == expected_path
     assert parsed.unique_str == expected_unique_str
 
 
-@pytest.mark.parametrize(
-    'user_specified',
-    [spec[0] for spec in TEST_KEYS]
-)
+@pytest.mark.parametrize('user_specified', [spec[0] for spec in TEST_KEYS])
 def test_cache_key_parsing_from_path_parts(user_specified):
     parsed = CacheKey.parse(user_specified)
     assert CacheKey.from_path_parts(parsed.path_parts) == parsed
@@ -240,12 +221,7 @@ def test_user_specified_cache_key(client, server):
     counter = count()
     all_keys = ['one', 'two', 'three']
     all_values = [
-        client.get(
-            f'{server}/unique-number',
-            cache_key=key,
-            params={'unique': str(next(counter))}
-        ).text
-        for key in all_keys
+        client.get(f'{server}/unique-number', cache_key=key, params={'unique': str(next(counter))}).text for key in all_keys
     ]
     assert len(set(all_values)) == len(all_values)  # they're all different
     for key, expected in zip(all_keys, all_values):
@@ -253,7 +229,7 @@ def test_user_specified_cache_key(client, server):
             f'{server}/unique-number',
             cache_key=key,
             # the param is actually different, but the cache key isn't, so we should get the same value back
-            params={'unique': str(next(counter))}
+            params={'unique': str(next(counter))},
         ).text
         assert obtained == expected
 
@@ -283,17 +259,12 @@ def test_user_specified_cache_key_on_redirect(client, server):
         )
         for key_1 in group_1
         for key_2 in group_2
-    ]
+    ],
 )
 def test_different_ways_to_express_cache_keys(client, server, key_1, key_2, should_match):
     counter = count()
     response_1, response_2 = (
-        client.get(
-            f'{server}/unique-number',
-            cache_key=key,
-            params={'unique': str(next(counter))}
-        ).text
-        for key in (key_1, key_2)
+        client.get(f'{server}/unique-number', cache_key=key, params={'unique': str(next(counter))}).text for key in (key_1, key_2)
     )
     if should_match:
         assert response_1 == response_2

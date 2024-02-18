@@ -4,7 +4,6 @@
 from contextlib import contextmanager
 from http.cookiejar import DefaultCookiePolicy
 import re
-from typing import Set
 
 # 3rd parties
 import requests

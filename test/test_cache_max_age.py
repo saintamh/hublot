@@ -97,6 +97,7 @@ def test_max_age_applies_when_following_redirects(mocker, reinstantiable_client,
         with _real_gzip_open(path, *rest, **kwargs) as f:
             yield f
         utime(path, (now.timestamp(), now.timestamp()))
+
     _real_gzip_open = gzip.open
     mocker.patch('hublot.cache.storage.gzip.open', mocked_gzip_open)
 

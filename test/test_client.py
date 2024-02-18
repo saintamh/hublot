@@ -26,7 +26,7 @@ from hublot.cache.storage import DiskStorage
         ({'json': None}, 'GET'),
         ({'json': ''}, 'POST'),
         ({'json': {'a': 'b'}}, 'POST'),
-    ]
+    ],
 )
 def test_default_method(client, server, kwargs, expected_method) -> None:
     assert client.fetch(f'{server}/method-test', **kwargs).text == expected_method
@@ -75,7 +75,7 @@ def test_courtesy_sleep_by_default(mocked_courtesy_sleep, server) -> None:
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
     mocked_courtesy_sleep.assert_called_once()
-    delay, = mocked_courtesy_sleep.call_args[0]
+    (delay,) = mocked_courtesy_sleep.call_args[0]
     assert delay > 1
 
 
@@ -91,7 +91,7 @@ def test_custom_courtesy_sleep(mocked_courtesy_sleep, server) -> None:
     client.get(f'{server}/unique-number')
     client.get(f'{server}/unique-number')
     mocked_courtesy_sleep.assert_called_once()
-    delay, = mocked_courtesy_sleep.call_args[0]
+    (delay,) = mocked_courtesy_sleep.call_args[0]
     assert delay == pytest.approx(120, 0.1)
 
 
@@ -173,9 +173,7 @@ def test_redirect_method(client, server, request_method, body_kwarg, redirect_co
     assert payload['method'] == expected_method_for_redirected_request
     assert payload['args'] == {'something': 'else'}
     assert payload['data'] == (
-        '' if expected_method_for_redirected_request == 'GET'
-        else 'blabla' if body_kwarg == 'data'
-        else '{"bla":"bla"}'
+        '' if expected_method_for_redirected_request == 'GET' else 'blabla' if body_kwarg == 'data' else '{"bla":"bla"}'
     )
 
 

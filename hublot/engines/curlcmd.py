@@ -54,7 +54,7 @@ class CurlCmdEngine(Engine):
         headers_match = re.search(br'\r?\n\r?\n', curl.stdout)
         if not headers_match:  # pragma: no cover
             raise Exception('Failed to find headers in curl output')
-        headers_str = curl.stdout[:headers_match.start()].decode('ISO-8859-1')
+        headers_str = curl.stdout[: headers_match.start()].decode('ISO-8859-1')
 
         status_code, reason, headers_str = self._parse_status_line(headers_str)
         return Response(
@@ -64,15 +64,17 @@ class CurlCmdEngine(Engine):
             status_code=status_code,
             reason=reason,
             headers=self._parse_headers(headers_str),
-            content=curl.stdout[headers_match.end():],
+            content=curl.stdout[headers_match.end() :],
         )
 
     def _compose_curl_command(self, creq: CompiledRequest, config: Config) -> Iterable[str]:
         yield from [
             self.curl_cmd,
             creq.url,
-            '--request', creq.method,
-            '--connect-timeout', str(config.timeout),
+            '--request',
+            creq.method,
+            '--connect-timeout',
+            str(config.timeout),
             '--compressed',
             '--include',
         ]
@@ -93,7 +95,7 @@ class CurlCmdEngine(Engine):
         match = RE_STATUS.search(headers_str)
         if not match:  # pragma: no cover
             raise HublotException('Malformed headers')
-        return int(match[1]), match[2], headers_str[match.end():]
+        return int(match[1]), match[2], headers_str[match.end() :]
 
     @staticmethod
     def _parse_headers(headers_str: str) -> Headers:

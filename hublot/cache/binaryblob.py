@@ -100,17 +100,17 @@ def _parse_message(
     read_to_end: bool = False,
 ) -> Tuple[Headers, Optional[bytes], int]:
     headers = Headers()
-    while data[pos : pos+EOL_LEN] != EOL_BYTES:
+    while data[pos : pos + EOL_LEN] != EOL_BYTES:
         key, value, pos = _parse_line(data, pos, r'^([^:]+): (.*)$')
         headers[key] = value
     pos += EOL_LEN
     body: Optional[bytes] = None
     if read_to_end:
-        body = data[pos : ]
+        body = data[pos:]
         pos = len(data)
     elif headers.get('Content-Length'):
         length = int(headers['Content-Length'])
-        body = data[pos : pos+length]
+        body = data[pos : pos + length]
         pos += length + (2 * EOL_LEN)
     else:
         pos += EOL_LEN
@@ -119,7 +119,7 @@ def _parse_message(
 
 def _parse_line(data: bytes, pos: int, regex: str):
     eol_pos = data.find(EOL_BYTES, pos)
-    line = data[pos : eol_pos].decode('UTF-8')
+    line = data[pos:eol_pos].decode('UTF-8')
     match = re.search(regex, line)
     if not match:  # pragma: no cover
         raise ValueError(repr(line))

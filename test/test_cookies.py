@@ -55,11 +55,7 @@ def test_multiple_cookies_headers(reinstantiable_client, server):
         if not reading_from_cache:
             # Check that the mock server returns cookies in 2 separate headers, else this test isn't testing what it meant to test.
             # Can't run this test on the second iteration, because we don't have `response.raw` when coming from cache.
-            response_cookies = sorted(
-                (key, value)
-                for key, value in response.headers.items()
-                if key == 'Set-Cookie'
-            )
+            response_cookies = sorted((key, value) for key, value in response.headers.items() if key == 'Set-Cookie')
             assert response_cookies == [('Set-Cookie', 'a=1'), ('Set-Cookie', 'b=2')]
         assert sorted(response.cookies.items()) == [('a', '1'), ('b', '2')]
         assert sorted(client.cookies.items()) == [('a', '1'), ('b', '2')]

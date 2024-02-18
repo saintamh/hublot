@@ -1,11 +1,17 @@
+fail_fast: true
 repos:
 
 - repo: local
   hooks:
+  - id: ruff
+    name: ruff
+    entry: ruff
+    language: python
+    types: [python]
+
   - id: pylint
     name: pylint
     entry: pylint
-    args: ['--load-plugins', 'pylint_quotes']
     language: python
     types: [python]
 
@@ -15,6 +21,13 @@ repos:
     language: python
     types: [python]
     args: [--show-error-codes]
+
+  - id: black
+    name: black
+    entry: black
+    language: python
+    types: [python]
+    args: [--line-length=132]
 
   - id: pytest
     name: pytest

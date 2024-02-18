@@ -23,10 +23,11 @@ def test_user_agent_method_kwarg(server):
     client = HttpClient(
         user_agent='this/gets/overriden',
     )
-    user_agent = client.get(
+    payload = client.get(
         f'{server}/echo',
         user_agent='Prapra/12.12',
-    ).json()['headers']['User-Agent']
+    ).json()
+    user_agent = payload['headers']['User-Agent']
     assert user_agent == 'Prapra/12.12'
 
 

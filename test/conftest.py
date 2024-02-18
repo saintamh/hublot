@@ -79,6 +79,7 @@ def flask_app():
         return request.method
 
     iter_numbers = count()
+
     @app.route('/unique-number', methods=['GET', 'POST'])
     def unique_number():
         return str(next(iter_numbers))
@@ -94,6 +95,7 @@ def flask_app():
             }
         )
 
+
     @app.route('/bytes', methods=['GET'])
     def bytes():
         return b'\x00' * int(request.args['length'])
@@ -104,6 +106,7 @@ def flask_app():
 
     num_calls_by_key = {}
     num_failures_by_key = {}
+
     @app.route('/fail-twice-then-succeed/<key>')
     def fail_twice_then_succeed(key):
         num_calls = num_calls_by_key.get(key, 0)
@@ -258,6 +261,7 @@ def captured_logs():
         handler.stream = StringIO()
         logging.debug('Captured logs: %r', value)
         return value
+
     yield getvalue
 
     logger.handlers = original_handlers

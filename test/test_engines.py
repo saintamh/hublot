@@ -10,7 +10,6 @@ from hublot import ConnectionError, HttpClient, Request
 @pytest.mark.parametrize(
     ['request_kwargs', 'expected_payload'],
     [
-
         pytest.param(
             dict(params={'a': 'b'}),
             {
@@ -21,7 +20,6 @@ from hublot import ConnectionError, HttpClient, Request
             },
             id='simple get',
         ),
-
         pytest.param(
             dict(data={'a': 'b'}),
             {
@@ -32,7 +30,6 @@ from hublot import ConnectionError, HttpClient, Request
             },
             id='simple post',
         ),
-
         pytest.param(
             dict(json={'a': 'b'}),
             {
@@ -43,7 +40,6 @@ from hublot import ConnectionError, HttpClient, Request
             },
             id='simple JSON post',
         ),
-
         pytest.param(
             dict(method='SLURP'),
             {
@@ -54,7 +50,6 @@ from hublot import ConnectionError, HttpClient, Request
             },
             id='custom method, no body',
         ),
-
         pytest.param(
             dict(method='POST', data=b'\x00\x01\x02'),
             {
@@ -65,7 +60,6 @@ from hublot import ConnectionError, HttpClient, Request
             },
             id='post unprintable bytes',
         ),
-
         pytest.param(
             dict(method='POST', data=b'\x00\x01\x02', headers={'Content-Type': 'application/whatever'}),
             {
@@ -76,8 +70,7 @@ from hublot import ConnectionError, HttpClient, Request
             },
             id='post with custom content-type',
         ),
-
-    ]
+    ],
 )
 def test_http_requests(engines, server, request_kwargs, expected_payload) -> None:
     client = HttpClient(engines=engines)
@@ -92,7 +85,7 @@ def test_http_requests(engines, server, request_kwargs, expected_payload) -> Non
 
 def test_long_response(engines, server) -> None:
     client = HttpClient(engines=engines)
-    length = 12*1024*1024
+    length = 12 * 1024 * 1024
     res = client.fetch(f'{server}/bytes', params={'length': length})
     assert res.content == b'\x00' * length
 

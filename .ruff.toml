@@ -1,0 +1,4 @@
+line-length = 132
+
+[lint]
+ignore-init-module-imports = true

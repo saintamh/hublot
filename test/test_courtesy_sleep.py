@@ -29,7 +29,7 @@ def test_courtesy_sleep(mocked_courtesy_sleep, server, courtesy_sleep):
         mocked_courtesy_sleep.assert_not_called()
     else:
         mocked_courtesy_sleep.assert_called_once()
-        delay, = mocked_courtesy_sleep.call_args[0]
+        (delay,) = mocked_courtesy_sleep.call_args[0]
         assert delay == pytest.approx(expected_sleep, 0.1)
 
 
@@ -71,7 +71,7 @@ def test_nonequal_hostnames(mocker, mocked_courtesy_sleep):
             'http://test:8080',
         ],
         2,
-    )
+    ),
 )
 def test_equal_hostnames(mocker, mocked_courtesy_sleep, url_1, url_2):
     client = HttpClient()

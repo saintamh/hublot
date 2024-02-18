@@ -48,14 +48,11 @@ class CacheKey:
         seq_match = re.search(r'\.(\d+)$', parts[-1])
         if seq_match:
             sequence_num = int(seq_match.group(1))
-            parts[-1] = parts[-1][:seq_match.start()]
+            parts[-1] = parts[-1][: seq_match.start()]
         else:
             sequence_num = 0
         return cls(
-            parts=tuple(
-                re.sub(r'%([0-9a-fA-F]{2})', lambda m: chr(int(m.group(1), 16)), p)
-                for p in parts
-            ),
+            parts=tuple(re.sub(r'%([0-9a-fA-F]{2})', lambda m: chr(int(m.group(1), 16)), p) for p in parts),
             sequence_num=sequence_num,
         )
 
@@ -66,11 +63,7 @@ class CacheKey:
         # same cache key. In previous versions, maybe not, so in 3.5 and before params and body should be serialised before being
         # sent to Hublot.
         headers_ignored_by_cache = config.headers_ignored_by_cache or set()
-        headers = sorted(
-            (key.title(), value)
-            for key, value in creq.headers.items()
-            if key not in headers_ignored_by_cache
-        )
+        headers = sorted((key.title(), value) for key, value in creq.headers.items() if key not in headers_ignored_by_cache)
         key = (
             creq.method,
             creq.url,
