@@ -59,8 +59,8 @@ class RequestsEngine(Engine):
 _encode_invalid_chars = urllib3.util.url._encode_invalid_chars  # type: ignore  # pylint: disable=protected-access
 
 
-def _encode_invalid_chars_preserve_case(component: str, allowed_chars: Set[str], encoding: str = 'utf-8') -> str:
-    new = _encode_invalid_chars(component, allowed_chars, encoding=encoding)
+def _encode_invalid_chars_preserve_case(component: str, *rest, **kwargs) -> str:
+    new = _encode_invalid_chars(component, *rest, **kwargs)
     if new != component:
         # `urllib3`, which is used internally by `requests`, changes the casing of %xx escapes, always forcing them to uppercase.
         # This means that if a server is set up such that when you ask for a URL with uppercase escapes it redirects you to the
