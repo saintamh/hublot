@@ -33,7 +33,7 @@ SCRAPER_LOCAL = ThreadLocalStack()
 def retry_on_scraper_error(
     no_parens_function: Optional[Callable] = None,
     *,
-    error_types: Sequence[type] = (ValueError,),
+    error_types: Sequence[type] = (HublotException, ValueError),
     num_attempts: int = 5,
 ):
     if no_parens_function:
@@ -49,7 +49,7 @@ def retry_on_scraper_error(
         finally:
             SCRAPER_LOCAL.stack.pop()
 
-    error_types = (HublotException, *error_types)
+    error_types = tuple(error_types)
 
     def make_wrapper(function: Callable):
         @wraps(function)
