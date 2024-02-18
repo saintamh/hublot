@@ -31,8 +31,12 @@ setuptools.setup(
         'chardet>= 3.0.2,<5',  # version req copied from requests
         'dataclasses>=0.8,<1; python_version<"3.7"',
         'requests>=2.25,<3',
-        'pycurl>=7,<8',
     ],
+    extras_require={
+        'pycurl': [
+            'pycurl>=7,<8',
+        ],
+    },
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

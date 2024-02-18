@@ -8,7 +8,11 @@ from typing import Any, Optional
 from urllib.parse import urlparse
 
 # 3rd parties
-import pycurl
+try:
+    import pycurl
+    HAVE_PYCURL = True
+except ImportError:
+    HAVE_PYCURL = False
 
 # hublot
 from ..config import Config
@@ -36,6 +40,8 @@ class PyCurlEngine(Engine):
     id = 'pycurl'
 
     def __init__(self) -> None:
+        if not HAVE_PYCURL:
+            raise ImportError("pycurl is not installed; maybe try 'pip install hublot[pycurl]'")
         self.curl: Any = pycurl.Curl()  # pylint: disable=c-extension-no-member
 
     def short_code(self) -> str:
