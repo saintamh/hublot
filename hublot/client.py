@@ -54,7 +54,7 @@ class HttpClient:
         and nicer than calling it `requestable`. Hey, `urllib.request.urlopen` does the same thing, so.
         """
         config, request_kwargs = self.config.derive_using_kwargs(**kwargs)
-        req = url.replace(**request_kwargs) if isinstance(url, Request) else Request(url=url, **request_kwargs)  # type: ignore
+        req = Request.build(url, **request_kwargs)
         history: list[Response] = []
         for redirect_count in range(config.max_redirects):
             res = self._fetch_without_redirect(

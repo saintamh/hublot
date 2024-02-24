@@ -17,6 +17,7 @@ from typing import (
 
 # 3rd parties
 import chardet
+import requests
 from requests.cookies import MockRequest, MockResponse, RequestsCookieJar
 
 
@@ -144,8 +145,33 @@ class Request:
     def replace(self, **kwargs) -> "Request":
         return replace(self, **kwargs)
 
+    @classmethod
+    def build(cls, raw: object, **kwargs) -> "Request":
+        if isinstance(raw, str):
+            return Request(url=raw, **kwargs)
+        if isinstance(raw, Request):
+            return raw.replace(**kwargs)
+        if isinstance(raw, requests.Request):
+            if raw.auth is not None and not isinstance(raw.auth, tuple):
+                raise NotImplementedError(type(raw.auth))  # need to convert to a tuple
+            if raw.cookies is not None and not isinstance(raw.cookies, dict):
+                raise NotImplementedError(type(raw.cookies))  # need to convert to a dict
+            merged_kwargs = dict(
+                url=raw.url,
+                method=raw.method,
+                headers=raw.headers,
+                params=raw.params,
+                data=raw.data,
+                json=raw.json,
+                auth=raw.auth,
+                cookies=raw.cookies,
+            )
+            merged_kwargs.update(kwargs)
+            return cls(**merged_kwargs)
+        raise ValueError(f"Don't know how to make a Request from {raw!r}")
 
-Requestable = Union[str, Request]
+
+Requestable = Union[str, Request, requests.Request]
 
 
 @dataclass
