@@ -19,6 +19,7 @@ from typing import (
 import chardet
 import requests
 from requests.cookies import MockRequest, MockResponse, RequestsCookieJar
+from requests.utils import get_encoding_from_headers
 
 
 JsonValue = Union[
@@ -214,8 +215,15 @@ class Response:
         return self.request.url
 
     @property
+    def encoding(self) -> Optional[str]:
+        """The declared character encoding of the response, if any."""
+        return get_encoding_from_headers(self.headers)
+
+    @property
     def text(self) -> str:
-        encoding = chardet.detect(self.content)["encoding"]
+        encoding = self.encoding
+        if encoding is None:
+            encoding = chardet.detect(self.content)["encoding"]
         if encoding is None:
             raise CharsetDetectionFailure()
         return self.content.decode(encoding)
