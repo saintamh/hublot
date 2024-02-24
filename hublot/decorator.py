@@ -8,6 +8,7 @@ from functools import wraps
 import threading
 from time import sleep
 from typing import Callable, Optional, Sequence
+from uuid import UUID, uuid4
 
 # hublot
 from .datastructures import HublotException
@@ -16,6 +17,7 @@ from .logs import LOGGER
 
 @dataclass
 class ThreadLocalStackFrame:
+    request_uuid: Optional[UUID] = None
     num_retries: int = 0
 
 
@@ -55,11 +57,13 @@ def retry_on_scraper_error(
         @wraps(function)
         def wrapper(*args, **kwargs):
             with scraper_stack_frame() as frame:
+                frame.request_uuid = uuid4()
                 for attempt in range(num_attempts):
+                    frame.num_retries = attempt
                     try:
-                        frame.num_retries = attempt
                         payload = function(*args, **kwargs)
                         if isinstance(payload, (Iterator, Generator)) and not isinstance(payload, Sized):
+                            # milk the generator so that all content is parsed
                             payload = list(payload)
                         return payload
                     except Exception as error:  # pylint: disable=broad-except
