@@ -5,20 +5,22 @@ from itertools import combinations, product
 from typing import Dict, Optional
 
 # hublot
-from hublot import HttpClient, Request, Requestable, Response
+from hublot import HttpClient, Request, Response
 from hublot.compile import compile_request
 from hublot.datastructures import CompiledRequest, Headers
 
 
 def dummy_compiled_request(client: HttpClient, **kwargs) -> CompiledRequest:
-    url: Requestable = kwargs.pop("url", "http://example.com/test")
+    url = kwargs.pop("url", "http://example.com/test")
     if isinstance(url, str):
         kwargs.setdefault("method", "POST")
         if kwargs["method"] in ("POST", "PUT") and "json" not in kwargs:
             kwargs.setdefault("data", b"This is my request data")
-        url = Request(url=url, **kwargs)
+        request = Request(url=url, **kwargs)
+    else:
+        request = url
     return compile_request(
-        url,
+        request,
         client.config,
         client.cookies,
         num_retries=0,
