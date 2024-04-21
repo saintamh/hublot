@@ -90,7 +90,7 @@ def test_long_response(engines, server) -> None:
     assert res.content == b"\x00" * length
 
 
-@pytest.mark.skip("Need proxy servers to test against (both HTTP and HTTPS, ideally)")
+@pytest.mark.skip("Need proxy servers to test against (both HTTP and HTTPS, ideally)")  # pragma: no cover
 def test_proxies(engines, server) -> None:
     client = HttpClient(engines=engines)
     res = client.fetch("http://hublot.test/", proxies={"http": server})

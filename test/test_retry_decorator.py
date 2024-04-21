@@ -124,7 +124,7 @@ def test_if_scraper_returns_dict_keys_it_doesnt_get_consumed():
 
 def test_if_scraper_returns_custom_iterable_without_len_it_doesnt_get_turned_into_a_list():
     class MyIterable:
-        def __iter__(self):
+        def __iter__(self):  # pragma: no cover
             assert False, "this shouldn't get called"
             yield from (1, 2, 3)
 

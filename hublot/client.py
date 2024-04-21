@@ -26,7 +26,7 @@ from .logs import LOGGER, LogEntry
 class HttpClient:
     """
     Core class for this package. Meant as a mostly-drop-in replacement for `requests.Session`, but handles caching, courtesy
-    sleep, and can multiple engines for performing the actual HTTP transactions.
+    sleep, and can use multiple engines for performing the actual HTTP transactions.
     """
 
     def __init__(
