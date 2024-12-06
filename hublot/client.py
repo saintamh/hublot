@@ -35,7 +35,7 @@ class HttpClient:
         engines: Sequence[EngineSpec] = ("requests",),
         **config_kwargs,
     ) -> None:
-        self.config = Config(**config_kwargs)
+        self.config = Config.build(**config_kwargs)
         self.cache = load_cache(cache, self.config)
         self.engine = load_engine_pool(engines)
         self.cookies = RequestsCookieJar()

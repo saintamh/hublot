@@ -225,3 +225,24 @@ def test_setting_both_data_and_json(client) -> None:
     # This, however, raises an exception
     with pytest.raises(TypeError):
         client.fetch(req)
+
+
+def test_client_level_headers_are_overriden_by_request_level(server) -> None:
+    client = HttpClient(
+        headers={
+            "X-Test-1": "One",
+            "X-Test-2": "Two",
+        },
+    )
+    res = client.get(
+        f"{server}/echo",
+        headers={
+            "X-Test-2": "Dva",
+            "X-Test-3": "Tri",
+        },
+    )
+    result = res.json()["headers"]
+    print(result)
+    assert result["X-Test-1"] == "One"
+    assert result["X-Test-2"] == "Dva"
+    assert result["X-Test-3"] == "Tri"

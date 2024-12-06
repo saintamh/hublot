@@ -17,7 +17,7 @@ class Cache:
     def __init__(
         self,
         storage: Storage,
-        config: Config = Config(),
+        config: Config = Config.build(),
     ) -> None:
         self.storage = storage
         self.config = config
@@ -70,7 +70,7 @@ CacheSpec = Union[Cache, Path, str, None]
 
 def load_cache(
     cache: CacheSpec = None,
-    config: Config = Config(),
+    config: Config = Config.build(),
 ) -> Optional["Cache"]:
     """
     Takes the `cache` param given to the `HttpClient` constructor, and returns a `Cache` instance, or `None`

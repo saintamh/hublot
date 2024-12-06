@@ -82,6 +82,10 @@ class Headers:
     def add(self, key: str, value: str) -> None:
         self._dict.setdefault(key.title(), []).append((key, value))
 
+    def add_all(self, other: Union["Headers", Dict[str, str]]) -> None:
+        for key, value in other.items():
+            self.add(key, value)
+
     __setitem__ = add
 
     def setdefault(self, key: str, value: str) -> str:

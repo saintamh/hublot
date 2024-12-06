@@ -44,9 +44,9 @@ class CurlCmdEngine(Engine):
         )
         if curl.returncode != 0:  # pragma: no cover
             output = curl.stderr.decode("UTF-8")
-            message_match = re.search(rf"curl: \({curl.returncode}\) (.+)", output)
-            message = message_match[1] if message_match else None
             if curl.returncode == 6:
+                message_match = re.search(rf"curl: \({curl.returncode}\) (.+)", output)
+                message = message_match[1] if message_match else None
                 raise ConnectionError(message or output)
             else:
                 raise HublotException(output)
@@ -77,6 +77,8 @@ class CurlCmdEngine(Engine):
             str(config.timeout),
             "--compressed",
             "--include",
+            "--silent",
+            "--show-error",
         ]
         for key, value in creq.headers.items():
             yield from ["-H", f"{key}: {value}"]

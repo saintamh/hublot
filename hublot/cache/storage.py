@@ -45,10 +45,11 @@ class DiskStorage(Storage):
                 return None
         try:
             with gzip.open(file_path, "rb") as file_in:
-                return parse_binary_blob(file_in.read())
-        except gzip.BadGzipFile as error:  # pragma: no cover
+                binary_blob = file_in.read()
+        except Exception as error:  # pragma: no cover
             logging.error("Couldn't read %s: %s", file_path, error)
             return None
+        return parse_binary_blob(binary_blob)
 
     def write(self, key: CacheKey, response: Response) -> None:
         file_path = self._file_path(key)

@@ -28,12 +28,16 @@ def compile_request(
         data=data,
         num_retries=num_retries,
     )
-    _add_cookies_to_request(cookies, creq)
+    _add_cookies_to_request(req, cookies, creq)
     return creq
 
 
 def _compile_request_headers(config: Config, req: Request) -> Headers:
-    headers = Headers(req.headers)
+    headers = Headers()
+    if config.headers:
+        headers.add_all(config.headers)
+    if req.headers:
+        headers.add_all(req.headers)
     headers.setdefault("Accept", "*/*")
     if config.user_agent:
         headers.setdefault("User-Agent", config.user_agent)
@@ -77,7 +81,20 @@ def _compile_request_data(req: Request, headers: Headers) -> Optional[bytes]:
     return data
 
 
-def _add_cookies_to_request(cookies: RequestsCookieJar, creq: CompiledRequest) -> None:
-    cookie = get_cookie_header(cookies, creq)
-    if cookie is not None:
-        creq.headers.add("Cookie", cookie)
+def _add_cookies_to_request(
+    req: Request,
+    cookies: RequestsCookieJar,
+    creq: CompiledRequest,
+) -> None:
+    """
+    `req` is the user-supplied request, which may contain hard-coded cookies
+    `cookies` is the `HttpClient`'s cookie jar, containing accumulated cookies from previous requests
+    """
+    if req.cookies:
+        # If `Request.cookies` are set, they override any accumulated cookies
+        cookies = cookies.copy()
+        for key, value in req.cookies.items():
+            cookies[key] = value
+    cookie_header = get_cookie_header(cookies, creq)
+    if cookie_header is not None:
+        creq.headers.add("Cookie", cookie_header)

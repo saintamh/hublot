@@ -7,6 +7,7 @@ from datetime import timedelta
 from typing import Dict, Optional, Tuple
 
 # hublot
+from .datastructures import Headers
 from .version import HUBLOT_VERSION
 
 
@@ -35,8 +36,25 @@ class Config:
     timeout: Optional[int] = 60
     user_agent: Optional[str] = f"hublot/{HUBLOT_VERSION}"
     verify: Optional[bool] = True
+    headers: Optional[Headers] = None
+
+    @classmethod
+    def build(cls, **kwargs: object) -> "Config":
+        # This pre-converts data before the constructor gets called
+        if "headers" in kwargs and not isinstance(kwargs["headers"], Headers):
+            kwargs["headers"] = Headers(kwargs["headers"])  # type: ignore[arg-type]
+        return cls(**kwargs)  # type: ignore[arg-type]
 
     def derive_using_kwargs(self, **kwargs: object) -> Tuple["Config", Dict[str, object]]:
         # NB this must always return a new instance, so that the caller can modify it without affecting the original
-        config = Config(**{key: kwargs.pop(key, default) for key, default in asdict(self).items()})  # type: ignore
+        self_asdict = asdict(self)
+        for key in self_asdict:
+            if key in kwargs:
+                if key == "headers" and self.headers:
+                    new_value = Headers(self.headers)
+                    new_value.add_all(kwargs.pop("headers"))  # type: ignore[arg-type]
+                else:
+                    new_value = kwargs.pop(key)  # type: ignore[assignment]
+                self_asdict[key] = new_value
+        config = Config.build(**self_asdict)
         return config, kwargs
