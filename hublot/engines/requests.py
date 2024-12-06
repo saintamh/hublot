@@ -17,7 +17,6 @@ from .register import register_engine
 
 
 class RequestsEngine(Engine):
-
     id = "requests"
 
     def __init__(self) -> None:

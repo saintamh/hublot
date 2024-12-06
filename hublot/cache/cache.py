@@ -13,7 +13,6 @@ from .storage import DiskStorage, Storage
 
 
 class Cache:
-
     def __init__(
         self,
         storage: Storage,

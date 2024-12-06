@@ -10,7 +10,6 @@ from ..datastructures import CompiledRequest, Response
 
 
 class Engine(ABC):
-
     id: ClassVar[str]
 
     @abstractmethod

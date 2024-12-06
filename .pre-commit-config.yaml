@@ -3,11 +3,19 @@ repos:
 
 - repo: local
   hooks:
-  - id: ruff
-    name: ruff
+  - id: ruff-check
+    name: ruff-check
     entry: ruff
     language: python
     types: [python]
+    args: [check]
+
+  - id: ruff-format
+    name: ruff-format
+    entry: ruff
+    language: python
+    types: [python]
+    args: [format]
 
   - id: pylint
     name: pylint
@@ -21,13 +29,6 @@ repos:
     language: python
     types: [python]
     args: [--show-error-codes]
-
-  - id: black
-    name: black
-    entry: black
-    language: python
-    types: [python]
-    args: [--line-length=132]
 
   - id: pytest
     name: pytest

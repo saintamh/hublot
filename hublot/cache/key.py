@@ -16,7 +16,6 @@ UserSpecifiedCacheKey = Union["CacheKey", Tuple[str, ...], str]
 
 @dataclass(frozen=True, order=True)
 class CacheKey:
-
     parts: Tuple[str, ...]
     sequence_num: int = 0
 

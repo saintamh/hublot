@@ -37,7 +37,6 @@ RE_HEADER = re.compile(
 
 
 class PyCurlEngine(Engine):
-
     id = "pycurl"
 
     def __init__(self) -> None:

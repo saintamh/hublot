@@ -12,7 +12,6 @@ from .base import Engine
 
 
 class EnginePool(Engine):
-
     id = "engine-pool"
 
     def __init__(self, engines: Sequence[Engine]):

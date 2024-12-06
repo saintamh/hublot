@@ -11,7 +11,6 @@ from hublot.engines import Engine, register_engine
 
 
 class TestEngine(Engine):
-
     def short_code(self) -> str:
         return self.id[-1:]
 

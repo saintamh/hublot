@@ -16,22 +16,24 @@ from .key import CacheKey
 
 
 class Storage(ABC):  # pragma: no-cover
+    @abstractmethod
+    def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]:
+        ...
 
     @abstractmethod
-    def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]: ...
+    def write(self, key: CacheKey, response: Response) -> None:
+        ...
 
     @abstractmethod
-    def write(self, key: CacheKey, response: Response) -> None: ...
+    def iter_all_keys(self) -> Iterable[CacheKey]:
+        ...
 
     @abstractmethod
-    def iter_all_keys(self) -> Iterable[CacheKey]: ...
-
-    @abstractmethod
-    def prune(self, max_age: timedelta) -> None: ...
+    def prune(self, max_age: timedelta) -> None:
+        ...
 
 
 class DiskStorage(Storage):
-
     def __init__(self, root_path: Path) -> None:
         self.root_path = root_path
 

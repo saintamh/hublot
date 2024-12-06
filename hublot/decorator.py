@@ -22,7 +22,6 @@ class ThreadLocalStackFrame:
 
 
 class ThreadLocalStack(threading.local):
-
     def __init__(self) -> None:
         super().__init__()
         # each thread will magically get a different stack

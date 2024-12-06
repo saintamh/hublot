@@ -26,7 +26,6 @@ class CurlCmdEngineError(HublotException):
 
 
 class CurlCmdEngine(Engine):
-
     id = "curlcmd"
 
     def __init__(self, curl_cmd: str = "curl") -> None:

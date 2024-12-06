@@ -218,7 +218,6 @@ def test_decorator_on_client_created_within_function(reinstantiable_client, serv
 
 
 def test_nested_scraper_functions(client, server, unique_key):
-
     # What should happen here:
     #
     #  1. the GET call in `inner()` fails, is retried, and so the call to `inner()` returns "success after 2 failures"
