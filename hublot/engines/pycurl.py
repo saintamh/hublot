@@ -26,12 +26,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 RE_STATUS = re.compile(
-    r"^\s* HTTP/\d+(?:\.\d+)? \s+ (\d\d\d) \s* (?: (\S.+?) \s* )? $",
+    r"^\s* HTTP/\d+(?:\.\d+)? \ + (\d\d\d) \ * (?: (\S.+?) \ * )? \r?\n",
     flags=re.M | re.X,
 )
 
 RE_HEADER = re.compile(
-    r"^\s* ([^:]+?) \s*:\s* (.+?) \s*$",
+    r"^\ * ([^:]+?) \ *:\ * (.+?) \ *\r?$",
     flags=re.M | re.X,
 )
 

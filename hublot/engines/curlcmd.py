@@ -50,10 +50,19 @@ class CurlCmdEngine(Engine):
             else:
                 raise HublotException(output)
 
-        headers_match = re.search(rb"\r?\n\r?\n", curl.stdout)
+        curl_output = curl.stdout
+
+        # completely ignore 10x headers
+        curl_output = re.sub(
+            rb"^HTTP/\d+(?:\.\d+)? 10\d\b(?:.*\r?\n)+\r?\n(?=HTTP/2 )",
+            b"",
+            curl_output,
+        )
+
+        headers_match = re.search(rb"\r?\n\r?\n", curl_output)
         if not headers_match:  # pragma: no cover
             raise Exception("Failed to find headers in curl output")
-        headers_str = curl.stdout[: headers_match.start()].decode("ISO-8859-1")
+        headers_str = curl_output[: headers_match.start()].decode("ISO-8859-1")
 
         status_code, reason, headers_str = self._parse_status_line(headers_str)
         return Response(
@@ -63,7 +72,7 @@ class CurlCmdEngine(Engine):
             status_code=status_code,
             reason=reason,
             headers=self._parse_headers(headers_str),
-            content=curl.stdout[headers_match.end() :],
+            content=curl_output[headers_match.end() :],
         )
 
     def _compose_curl_command(self, creq: CompiledRequest, config: Config) -> Iterable[str]:
