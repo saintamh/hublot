@@ -119,7 +119,7 @@ def test_if_scraper_returns_dict_keys_it_doesnt_get_consumed():
     def fetch():
         return {1: 1, 2: 2, 3: 3}.keys()
 
-    assert isinstance(fetch(), type({}.keys()))  # you're confused, pylint: disable=isinstance-second-argument-not-valid-type
+    assert isinstance(fetch(), type({}.keys()))
 
 
 def test_if_scraper_returns_custom_iterable_without_len_it_doesnt_get_turned_into_a_list():

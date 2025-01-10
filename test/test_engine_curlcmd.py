@@ -17,10 +17,10 @@ from hublot.compile import compile_request
     [
         pytest.param(
             """
-            HTTP/2 200 
+            HTTP/2 200
             Content-Type: text/plain; charset=UTF-8
             Content-Length: 2
-            
+
             OK
             """,
             lambda creq: Response(
@@ -45,7 +45,7 @@ from hublot.compile import compile_request
             Connection: Upgrade
             Upgrade: h2c
 
-            HTTP/2 200 
+            HTTP/2 200
             Content-Type: text/plain; charset=UTF-8
             Content-Length: 2
 

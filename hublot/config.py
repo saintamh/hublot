@@ -10,7 +10,6 @@ from typing import Dict, Optional, Tuple
 from .datastructures import Headers
 from .version import HUBLOT_VERSION
 
-
 # Headers in this set will not be taken into account when computing cache keys, so two requests with different values for these
 # headers will still get the same cache key.
 #

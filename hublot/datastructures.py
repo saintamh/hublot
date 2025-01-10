@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 # standards
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, replace
 import json
 from typing import (
     # We use the title-cased Dict, List and Tuple for backwards compat with pythons <3.9
     Any,
     Dict,
-    Iterator,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )
@@ -20,7 +19,6 @@ import chardet
 import requests
 from requests.cookies import MockRequest, MockResponse, RequestsCookieJar
 from requests.utils import get_encoding_from_headers
-
 
 JsonValue = Union[
     None,
@@ -123,7 +121,7 @@ class Headers:
         return sorted(self.items(normalise_keys=True)) == sorted(other.items(normalise_keys=True))
 
     def __repr__(self) -> str:
-        return "Headers({%s})" % ", ".join(f"{key!r}: {value!r}" for key, value in self.items())
+        return "Headers({%s})" % ", ".join(f"{key!r}: {value!r}" for key, value in self.items())  # noqa: UP031
 
 
 @dataclass

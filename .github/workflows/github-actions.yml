@@ -25,8 +25,7 @@ jobs:
     - name: Lint
       run: |
         ruff check hublot/ test/
-        ruff format --check --line-length=132 hublot/ test/
-        pylint hublot/ test/
+        ruff format --check hublot/ test/
         mypy --show-error-codes hublot/ test/
     - name: Test
       run: |

@@ -17,13 +17,12 @@ from typing import Callable, Optional, Tuple
 # hublot
 from ..datastructures import CompiledRequest, Headers, Response
 
-
 EOL = "\r\n"
 EOL_BYTES = EOL.encode("UTF-8")
 EOL_LEN = len(EOL)
 
 
-Writer = getwriter("UTF-8")  # pylint: disable=invalid-name
+Writer = getwriter("UTF-8")
 
 
 def compose_binary_blob(res: Response) -> bytes:

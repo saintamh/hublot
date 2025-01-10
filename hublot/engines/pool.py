@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 # standards
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 from uuid import UUID
 
 # hublot

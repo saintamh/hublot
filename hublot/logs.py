@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 # standards
+from collections.abc import Iterator
 from dataclasses import dataclass
 import logging
-from typing import Iterator, List, Optional, Union
+from typing import List, Optional, Union
 
 # hublot
 from .datastructures import CompiledRequest
@@ -47,7 +48,7 @@ class LogEntry:
             parts.append(f"{round(self.courtesy_seconds)}s")
         if not parts:
             return None
-        return "[%s]" % "+".join(parts)
+        return "[%s]" % "+".join(parts)  # noqa: UP031
 
     def __str__(self) -> str:
         return "".join(self._compose_line())

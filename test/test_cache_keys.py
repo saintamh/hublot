@@ -13,6 +13,7 @@ from hublot import Request
 from hublot.cache import CacheKey
 from hublot.config import Config
 from hublot.logs import LogEntry
+
 from .utils import dummy_compiled_request, dummy_response, iter_equal_pairs, iter_nonequal_pairs
 
 

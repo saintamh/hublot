@@ -22,7 +22,7 @@ class TestEngine(Engine):
             status_code=200,
             reason="OK",
             headers=Headers(),
-            content=f"/{re.sub(r'.+/', '', creq.url)} from {self.id}".encode("UTF-8"),
+            content=f"/{re.sub(r'.+/', '', creq.url)} from {self.id}".encode(),
         )
 
 

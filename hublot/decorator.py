@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 # standards
-from collections.abc import Generator, Iterator, Sized
+from collections.abc import Generator, Iterator, Sequence, Sized
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 import threading
 from time import sleep
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 # hublot
@@ -65,7 +65,7 @@ def retry_on_scraper_error(
                             # milk the generator so that all content is parsed
                             payload = list(payload)
                         return payload
-                    except Exception as error:  # pylint: disable=broad-except
+                    except Exception as error:
                         if isinstance(error, error_types) and attempt < num_attempts - 1:
                             delay = 5**attempt
                             LOGGER.error("%s: %s - sleeping %ds", type(error).__name__, error, delay)

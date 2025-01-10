@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 # standards
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
 # hublot
 from .base import Engine
@@ -10,7 +11,6 @@ from .pool import EnginePool
 from .pycurl import PyCurlEngine
 from .register import ALL_ENGINES, register_engine
 from .requests import RequestsEngine
-
 
 __all__ = [
     "ALL_ENGINES",

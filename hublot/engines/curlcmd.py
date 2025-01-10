@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 
 # standards
+from collections.abc import Iterable
 import logging
 import re
 import subprocess
-from typing import Iterable, Optional, Tuple
+from typing import Optional, Tuple
 from urllib.parse import urlparse
 
 # hublot
 from ..config import Config
-from ..datastructures import CompiledRequest, ConnectionError, Headers, Response, HublotException
+from ..datastructures import CompiledRequest, ConnectionError, Headers, HublotException, Response
 from .base import Engine
 from .pycurl import RE_HEADER, RE_STATUS
 from .register import register_engine
-
 
 LOGGER = logging.getLogger(__name__)
 

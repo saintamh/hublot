@@ -1,4 +1,29 @@
 line-length = 132
 
 [lint]
-ignore-init-module-imports = true
+select = [
+  "F",  # Pyflakes
+  "E",  # Pycodestyle Errors
+  "W",  # Pycodestyle Warnings
+  "I",  # isort
+  "N",  # naming
+  "UP",  # pyupgrade
+  "PL",  # pylint
+]
+ignore = [
+  "N818",  # Exception class names must end in "Error"
+  "PLR2004",  # Magic value used in comparison
+
+  # These are sound rules but we ignore them because we want our code to be
+  # backwards-compatible with older Pythons, so we allow e.g. using
+  # `typing.Tuple` etc
+  "UP006",
+  "UP035",
+]
+
+
+[lint.isort]
+force-sort-within-sections = true
+
+[lint.pylint]
+max-args = 6

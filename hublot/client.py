@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 # standards
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import timedelta
 from time import sleep, time
-from typing import Dict, Iterator, Optional, Sequence
+from typing import Dict, Optional
 from urllib.parse import urljoin, urlparse
 
 # 3rd parties

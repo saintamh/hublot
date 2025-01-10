@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# It's the pytest way, pylint: disable=redefined-outer-name
-
 # standards
 from io import StringIO
 from itertools import count
@@ -19,12 +17,12 @@ import pytest
 from werkzeug.serving import make_server  # installed transitively by Flask
 
 # hublot
-from hublot import HttpClient, basic_logging_config, logger
+from hublot import HttpClient, basic_logging_config
 from hublot.cache import load_cache
-from hublot.engines.register import ALL_ENGINES
 import hublot.client
 import hublot.decorator
-
+from hublot.engines.register import ALL_ENGINES
+from hublot.logs import LOGGER
 
 basic_logging_config(level="DEBUG")
 
@@ -65,9 +63,7 @@ def client(cache):
     yield HttpClient(cache=cache)
 
 
-def flask_app():
-    # Yeah, we don't call these directly, but they still need names, pylint: disable=unused-variable
-    # And yes, it's a bit long for a function, but it's still readable, pylint: disable=too-many-locals
+def flask_app():  # noqa: PLR0915
     app = Flask("hublot-tests")
 
     @app.route("/hello")
@@ -91,7 +87,7 @@ def flask_app():
                 "method": request.method,
                 "args": request.args,
                 "headers": dict(request.headers.items()),
-                "data": "".join(chr(b) if 0x20 < b < 0x7E and chr(b) != r"\\" else r"\x%02x" % b for b in request.get_data()),
+                "data": "".join(chr(b) if 0x20 < b < 0x7E and chr(b) != r"\\" else r"\x%02x" % b for b in request.get_data()),  # noqa: UP031
             }
         )
 
@@ -199,7 +195,7 @@ def flask_app():
             "/bicam%C3%A9ral?name=Zo%C3%A9": "upper",
             "/bicam%C3%A9ral?name=Zo%c3%a9": "lower",
         }[raw_uri]
-        return "%s[%s]" % (case, next(iter_numbers))
+        return f"{case}[{next(iter_numbers)}]"
 
     @app.route("/redirigé")
     def redirige():
@@ -221,7 +217,7 @@ def flask_app():
 def server():
     app = flask_app()
     port = randrange(5000, 50000)
-    server = make_server("127.0.0.1", port, app)  # pylint: disable=redefined-outer-name
+    server = make_server("127.0.0.1", port, app)
     app.app_context().push()
     thread = Thread(target=server.serve_forever)
     thread.start()
@@ -252,8 +248,8 @@ def unique_key():
 @pytest.fixture
 def captured_logs():
     handler = logging.StreamHandler(StringIO())
-    original_handlers = logger.handlers
-    logger.handlers = [handler]
+    original_handlers = LOGGER.handlers
+    LOGGER.handlers = [handler]
 
     def getvalue():
         value = handler.stream.getvalue()
@@ -263,7 +259,7 @@ def captured_logs():
 
     yield getvalue
 
-    logger.handlers = original_handlers
+    LOGGER.handlers = original_handlers
 
 
 def pytest_collection_modifyitems(items):

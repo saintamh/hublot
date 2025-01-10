@@ -2,12 +2,13 @@
 
 # standards
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 import gzip
 import logging
 from pathlib import Path
 import re
-from typing import Iterable, Optional
+from typing import Optional
 
 # hublot
 from ..datastructures import Response
@@ -17,20 +18,16 @@ from .key import CacheKey
 
 class Storage(ABC):  # pragma: no-cover
     @abstractmethod
-    def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]:
-        ...
+    def read(self, key: CacheKey, max_age: Optional[timedelta] = None) -> Optional[Response]: ...
 
     @abstractmethod
-    def write(self, key: CacheKey, response: Response) -> None:
-        ...
+    def write(self, key: CacheKey, response: Response) -> None: ...
 
     @abstractmethod
-    def iter_all_keys(self) -> Iterable[CacheKey]:
-        ...
+    def iter_all_keys(self) -> Iterable[CacheKey]: ...
 
     @abstractmethod
-    def prune(self, max_age: timedelta) -> None:
-        ...
+    def prune(self, max_age: timedelta) -> None: ...
 
 
 class DiskStorage(Storage):
@@ -73,7 +70,8 @@ class DiskStorage(Storage):
             if file_age > max_age:
                 file_path.unlink()
                 dirs_to_check.add(file_path.parent)
-        for dir_path in dirs_to_check:
+        for file_parent in dirs_to_check:
+            dir_path = file_parent
             while dir_path != self.root_path and not next(dir_path.iterdir(), None):
                 dir_path.rmdir()
                 dir_path = dir_path.parent

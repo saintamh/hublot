@@ -5,8 +5,8 @@ from .client import HttpClient
 from .datastructures import (
     CharsetDetectionFailure,
     ConnectionError,
-    HttpError,
     Headers,
+    HttpError,
     HublotException,
     Request,
     Requestable,
@@ -15,7 +15,7 @@ from .datastructures import (
 )
 from .decorator import retry_on_scraper_error
 from .engines import register_engine
-from .logs import LOGGER as logger, basic_logging_config
+from .logs import basic_logging_config
 
 __all__ = [
     "Cache",
@@ -31,7 +31,6 @@ __all__ = [
     "Response",
     "TooManyRedirects",
     "basic_logging_config",
-    "logger",
     "register_engine",
     "retry_on_scraper_error",
 ]

@@ -21,7 +21,6 @@ from ..datastructures import CompiledRequest, ConnectionError, Headers, HublotEx
 from .base import Engine
 from .register import register_engine
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -42,7 +41,7 @@ class PyCurlEngine(Engine):
     def __init__(self) -> None:
         if not HAVE_PYCURL:
             raise ImportError("pycurl is not installed; maybe try 'pip install hublot[pycurl]'")
-        self.curl: Any = pycurl.Curl()  # pylint: disable=c-extension-no-member
+        self.curl: Any = pycurl.Curl()
 
     def short_code(self) -> str:
         return "pc"
@@ -79,7 +78,7 @@ class PyCurlEngine(Engine):
         c.setopt(c.WRITEFUNCTION, output_bytes.write)
         try:
             c.perform()
-        except pycurl.error as error:  # pylint: disable=c-extension-no-member
+        except pycurl.error as error:
             error_code, message = error.args
             if error_code == 6:
                 raise ConnectionError(message) from error

@@ -53,12 +53,10 @@ def iter_nonequal_pairs(equivalencies):
             for other_index, other_group in enumerate(equivalencies)
             if other_index > index  # Using > to avoid wastefully comparing A to B and B to A
         ]
-        for elem, other_elem in product(group, all_other_elems):
-            yield elem, other_elem
+        yield from product(group, all_other_elems)
 
 
 def iter_equal_pairs(equivalencies):
     for group in equivalencies:
         if len(group) > 2:
-            for elem_1, elem_2 in combinations(group, 2):
-                yield elem_1, elem_2
+            yield from combinations(group, 2)

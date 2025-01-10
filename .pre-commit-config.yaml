@@ -8,7 +8,7 @@ repos:
     entry: ruff
     language: python
     types: [python]
-    args: [check]
+    args: [check, --fix]
 
   - id: ruff-format
     name: ruff-format
@@ -16,12 +16,6 @@ repos:
     language: python
     types: [python]
     args: [format]
-
-  - id: pylint
-    name: pylint
-    entry: pylint
-    language: python
-    types: [python]
 
   - id: mypy
     name: mypy

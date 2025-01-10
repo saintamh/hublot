@@ -45,7 +45,7 @@ class RequestsEngine(Engine):
                     history=[],
                     status_code=rres.status_code,
                     reason=rres.reason,
-                    headers=Headers(rres.raw._fp.headers),  # pylint: disable=protected-access
+                    headers=Headers(rres.raw._fp.headers),
                     content=rres.content,
                 )
         except requests.exceptions.ConnectionError as error:
@@ -54,7 +54,7 @@ class RequestsEngine(Engine):
             raise HublotException(error) from error
 
 
-_encode_invalid_chars = urllib3.util.url._encode_invalid_chars  # type: ignore  # pylint: disable=protected-access
+_encode_invalid_chars = urllib3.util.url._encode_invalid_chars  # type: ignore
 
 
 def _encode_invalid_chars_preserve_case(component: str, *rest, **kwargs) -> str:
@@ -74,7 +74,6 @@ def _encode_invalid_chars_preserve_case(component: str, *rest, **kwargs) -> str:
 
 @contextmanager
 def patched_encode_invalid_chars():
-    # pylint: disable=protected-access
     original = urllib3.util.url._encode_invalid_chars
     urllib3.util.url._encode_invalid_chars = _encode_invalid_chars_preserve_case
     try:

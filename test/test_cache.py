@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 # standards
+from collections.abc import Iterable
 from dataclasses import replace
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Tuple
 
 # 3rd parties
 import pytest
@@ -12,6 +13,7 @@ import pytest
 from hublot import HttpClient, Response
 from hublot.cache.storage import DiskStorage
 from hublot.logs import LogEntry
+
 from .utils import dummy_compiled_request, dummy_response
 
 
@@ -45,13 +47,13 @@ def test_cache(reinstantiable_client) -> None:
 def test_client_caching(mocker, reinstantiable_client) -> None:
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
-        res = replace(res, from_cache=False)
+        res = replace(res, from_cache=False)  # noqa: PLW2901
         request = mocker.patch.object(client.engine, "request", return_value=res)
         assert client.fetch(**req) == res
         request.assert_called_once()
     client = reinstantiable_client()
     for req, res in iter_pairs(client):
-        res = replace(res, from_cache=True)
+        res = replace(res, from_cache=True)  # noqa: PLW2901
         request = mocker.patch.object(client.engine, "request", return_value=res)
         assert client.fetch(**req) == res
         request.assert_not_called()

@@ -10,7 +10,6 @@ from typing import Optional, Tuple, Union
 from ..config import Config
 from ..datastructures import CompiledRequest
 
-
 UserSpecifiedCacheKey = Union["CacheKey", Tuple[str, ...], str]
 
 

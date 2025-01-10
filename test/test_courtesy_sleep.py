@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# You're confused because we're patching the `sleep` function and it's not what you expect, pylint: disable=no-member
-
 # standards
 from datetime import timedelta
 from itertools import combinations
@@ -11,6 +9,7 @@ import pytest
 
 # hublot
 from hublot import HttpClient
+
 from .utils import dummy_compiled_request, dummy_response
 
 
